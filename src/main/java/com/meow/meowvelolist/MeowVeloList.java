@@ -129,7 +129,14 @@ public class MeowVeloList {
 
     // 获取配置文件中的语言设置
     private String getLanguageFromConfig() {
-        File configFile = new File("config.yml");  // 假设配置文件名为 config.yml
+        // 确保插件目录存在
+        File pluginDir = new File(getDataFolder(), "MeowVeloList");
+        if (!pluginDir.exists()) {
+            pluginDir.mkdirs();
+        }
+
+        // 设置配置文件路径为 plugins/MeowVeloList/config.yml
+        File configFile = new File(pluginDir, "config.yml");
         if (!configFile.exists()) {
             // 如果配置文件不存在，则创建一个默认配置文件
             createDefaultConfig(configFile);
@@ -178,8 +185,11 @@ public class MeowVeloList {
         nowusinglatestversionMessage = "您正在使用最新版本！";
         reloadedMessage = "配置文件已重载！";
         nopermissionMessage = "你没有权限执行此命令！";
-        serverPrefix = "§eServer: ";
-        playersPrefix = "§bPlayers: ";
+        serverPrefix = "§e服务器: ";
+        playersPrefix = "§b玩家列表: ";
+        nowallplayercountMessage = "§6当前在线人数: §e";
+        singleserverplayeronlineMessage = " §e个在线玩家";
+        noplayersonlineMessage = "§7当前没有在线玩家";
     }
 
     // 加载繁体中文消息
@@ -198,6 +208,9 @@ public class MeowVeloList {
         nopermissionMessage = "您沒有權限執行此命令！";
         serverPrefix = "§e伺服器: ";
         playersPrefix = "§b玩家: ";
+        nowallplayercountMessage = "§6當前線上人數: §e";
+        singleserverplayeronlineMessage = " §e個在線玩家";
+        noplayersonlineMessage = "§7當前沒有在線玩家";
     }
 
     // 加载英文消息
@@ -216,44 +229,60 @@ public class MeowVeloList {
         nopermissionMessage = "You do not have permission to execute this command!";
         serverPrefix = "§eServer: ";
         playersPrefix = "§bPlayers: ";
+        nowallplayercountMessage = "§6Current online players: §e";
+        singleserverplayeronlineMessage = " §eplayer(s) online";
+        noplayersonlineMessage = "§7No players online";
     }
 
-    // 下面是显示玩家列表的命令实现
-    class PlayerInfoCommand implements SimpleCommand {
-        private final ProxyServer server;
-
-        public PlayerInfoCommand(ProxyServer server) {
-            this.server = server;
+    @Override
+    public void execute(Invocation invocation) {
+        CommandSource source = invocation.source();
+        
+        // 权限检查
+        if (!source.hasPermission("meowvelolist.meowlist")) {
+            source.sendMessage(Component.text(nopermissionMessage));
+            return;
         }
 
-        @Override
-        public void execute(Invocation invocation) {
-            CommandSource source = invocation.source();
-            if (!source.hasPermission("meowvelolist.meowlist")) {
-                source.sendMessage(Component.text(nopermissionMessage));
-                return;
-            }
+        // 获取代理端总玩家数
+        int totalPlayers = server.getAllPlayers().size();
+        StringBuilder response = new StringBuilder();
 
-            // 获取代理端总玩家数
-            int totalPlayers = server.getAllPlayers().size();
-            StringBuilder response = new StringBuilder();
-            response.append("当前代理总在线人数: ").append(totalPlayers).append("\n");
+        // 标题
+        response.append(Component.text("§a≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡")
+                .decorate(TextDecoration.BOLD)).append("\n");
+        
+        // 代理总在线人数
+        response.append(nowallplayercountMessage).append(totalPlayers).append("\n");
 
-            // 获取每个子服的在线玩家列表
-            for (RegisteredServer registeredServer : server.getAllServers()) {
-                String serverName = registeredServer.getServerInfo().getName();
-                List<String> playerNames = registeredServer.getPlayersConnected().stream()
-                        .map(Player::getUsername)
-                        .collect(Collectors.toList());
+        // 分隔线
+        response.append("§a------------------------------------------------------------\n");
 
-                response.append(serverPrefix).append(serverName)
-                        .append(" §7(").append(playerNames.size()).append(")\n");
+        // 获取每个子服的在线玩家列表
+        for (RegisteredServer registeredServer : server.getAllServers()) {
+            String serverName = registeredServer.getServerInfo().getName();
+            List<String> playerNames = registeredServer.getPlayersConnected().stream()
+                    .map(Player::getUsername)
+                    .collect(Collectors.toList());
+
+            // 每个子服信息
+            response.append(serverPrefix).append(serverName).append(" §7(")
+                    .append(playerNames.size()).append(singleserverplayeronlineMessage).append("§7)").append("\n");
+
+            // 玩家列表
+            if (!playerNames.isEmpty()) {
                 response.append(playersPrefix)
                         .append(String.join(", ", playerNames)).append("\n");
+            } else {
+                response.append(noplayersonlineMessage).append("\n");
             }
 
-            // 向玩家或控制台发送信息
-            source.sendMessage(Component.text(response.toString()));
+            // 子服之间分隔线
+            response.append("§a------------------------------------------------------------\n");
         }
+
+        // 发送格式化消息
+        source.sendMessage(Component.text(response.toString()));
     }
+
 }
