@@ -191,16 +191,17 @@ public class MeowVeloList {
     }
 
     private String getLanguageFromConfig() {
-        File pluginDir = new File(dataDirectory.toFile());
+        // 使用路径字符串而不是 File 对象
+        File pluginDir = new File(dataDirectory.toFile().getPath());  // 获取路径
         if (!pluginDir.exists()) {
-            pluginDir.mkdirs();
+            pluginDir.mkdirs();  // 如果目录不存在，创建目录
         }
 
         File configFile = new File(pluginDir, "config.yml");
         if (!configFile.exists()) {
-            createDefaultConfig(configFile);
+            createDefaultConfig(configFile);  // 如果文件不存在，创建默认配置文件
         }
-
+        
         try {
             Yaml yaml = new Yaml();
             java.util.Map<String, Object> config = yaml.load(java.nio.file.Files.newInputStream(configFile.toPath()));
