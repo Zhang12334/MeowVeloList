@@ -30,7 +30,23 @@ import java.util.stream.Collectors;
         authors = {"Zhang1233"} 
 )
 public class MeowVeloList {
-
+    private String startupMessage;
+    private String shutdownMessage;
+    private String notenableMessage;
+    private String nowusingversionMessage;
+    private String checkingupdateMessage;
+    private String checkfailedMessage;
+    private String updateavailableMessage;
+    private String updateurlMessage;
+    private String oldversionmaycauseproblemMessage;
+    private String nowusinglatestversionMessage;
+    private String reloadedMessage;
+    private String nopermissionMessage;
+    private String serverPrefix;
+    private String playersPrefix;
+    private String nowallplayercountMessage;
+    private String singleserverplayeronlineMessage;
+    private String noplayersonlineMessage;
     private static final String VERSION = "1.0";
     private final ProxyServer server;
     private Path dataDirectory;
