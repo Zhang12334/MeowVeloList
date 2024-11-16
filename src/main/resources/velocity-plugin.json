@@ -1,0 +1,11 @@
+{
+    "id": "meowvelolist",
+    "name": "MeowVeloList",
+    "version": "1.0",
+    "description": "一个在 Velocity 端显示玩家列表的插件",
+    "authors": [
+      "Zhang1233"
+    ],
+    "main": "com.meow.meowvelolist.MeowVeloList"
+  }
+  
