@@ -235,9 +235,7 @@ public class MeowVeloList {
     }
 
     @Override
-    public void execute(Invocation invocation) {
-        CommandSource source = invocation.source();
-        
+    public void execute(CommandSource source, String[] args) {
         // 权限检查
         if (!source.hasPermission("meowvelolist.meowlist")) {
             source.sendMessage(Component.text(nopermissionMessage));  // 权限不足的提示信息
@@ -284,6 +282,4 @@ public class MeowVeloList {
         // 发送格式化消息
         source.sendMessage(Component.text(response.toString()));
     }
-
-
 }
