@@ -50,6 +50,7 @@ public class MeowVeloList {
     private static final String VERSION = "1.0";
     private final ProxyServer server;
     private Path dataDirectory;
+    private final Metrics.Factory metricsFactory;
 
     @Inject
     public MeowVeloList(ProxyServer server, @DataDirectory Path dataDirectory) {
@@ -57,14 +58,15 @@ public class MeowVeloList {
         this.dataDirectory = dataDirectory;
         loadLanguage(); 
         server.getConsoleCommandSource().sendMessage(Component.text(startupMessage));
-        this.logger = server.getLogger();
+        this.logger = logger();
+        this.metricsFactory = metricsFactory;
     }
 
     // 订阅初始化事件
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
         int pluginId = 23904; // <-- Replace with the id of your plugin!
-        Metrics metrics = new Metrics(this, pluginId);
+        Metrics metrics = metricsFactory.make(this, pluginId);
         server.getCommandManager().register("mlist", new SimpleCommand() {
             @Override
             public void execute(Invocation invocation) {
