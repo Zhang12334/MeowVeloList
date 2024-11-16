@@ -12,7 +12,9 @@ import com.velocitypowered.api.command.SimpleCommand;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.yaml.snakeyaml.Yaml;
-
+import java.util.concurrent.CompletableFuture;
+import net.kyori.adventure.text.TextComponent;
+import java.util.Arrays;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
