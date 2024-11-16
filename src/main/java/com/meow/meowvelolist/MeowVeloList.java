@@ -23,7 +23,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
-
+import com.meow.meowvelolist.Metrics;
 @Plugin(
         id = "meowvelolist", 
         name = "MeowVeloList", 
@@ -202,8 +202,8 @@ public class MeowVeloList {
         } else if ("en".equalsIgnoreCase(language)) {
             loadEnglishMessages();
         } else {
-            source.sendMessage(Component.text("[Chinese] 未找到对应语言, 使用zh_cn作为默认语言"));
-            source.sendMessage(Component.text("[English] The language file could not be found, using zh_cn as the default language."));
+            server.getConsole().sendMessage(Component.text("[Chinese] 未找到对应语言, 使用zh_cn作为默认语言"));
+            server.getConsole().sendMessage(Component.text("[English] The language file could not be found, using zh_cn as the default language."));
             loadChineseSimplifiedMessages();
         }
     }
