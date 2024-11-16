@@ -51,6 +51,7 @@ public class MeowVeloList {
     private final ProxyServer server;
     private Path dataDirectory;
     private final Metrics.Factory metricsFactory;
+    private final Logger logger;
 
     @Inject
     public MeowVeloList(ProxyServer server, @DataDirectory Path dataDirectory) {
