@@ -10,9 +10,9 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import net.kyori.adventure.text.Component;
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.DumperOptions.FlowStyle;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.yaml.snakeyaml.Yaml;
+
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
@@ -51,6 +51,9 @@ public class MeowVeloList {
     private String nopermissionMessage;
     private String serverPrefix;
     private String playersPrefix;
+    private String nowallplayercountMessage;
+    private String singleserverplayeronlineMessage;
+    private String noplayersonlineMessage;
 
     // 构造函数，注入 ProxyServer 和数据目录路径
     @Inject
@@ -63,7 +66,56 @@ public class MeowVeloList {
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
         // 注册 /meowlist 命令
-        server.getCommandManager().register("meowlist", new PlayerInfoCommand(server));
+        server.getCommandManager().register("meowlist", new SimpleCommand() {
+            @Override
+            public void execute(CommandSource source, String[] args) {
+                // 权限检查
+                if (!source.hasPermission("meowvelolist.meowlist")) {
+                    source.sendMessage(Component.text(nopermissionMessage));  // 权限不足的提示信息
+                    return;
+                }
+
+                // 获取代理端总玩家数
+                int totalPlayers = server.getAllPlayers().size();
+                StringBuilder response = new StringBuilder();
+
+                // 标题
+                response.append(Component.text("§a≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡")
+                        .decorate(TextDecoration.BOLD)).append("\n");
+                
+                // 代理总在线人数
+                response.append(nowallplayercountMessage).append(totalPlayers).append("\n");
+
+                // 分隔线
+                response.append("§a------------------------------------------------------------\n");
+
+                // 获取每个子服的在线玩家列表
+                for (RegisteredServer registeredServer : server.getAllServers()) {
+                    String serverName = registeredServer.getServerInfo().getName();
+                    List<String> playerNames = registeredServer.getPlayersConnected().stream()
+                            .map(Player::getUsername)
+                            .collect(Collectors.toList());
+
+                    // 每个子服信息
+                    response.append(serverPrefix).append(serverName).append(" §7(")
+                            .append(playerNames.size()).append(singleserverplayeronlineMessage).append("§7)").append("\n");
+
+                    // 玩家列表
+                    if (!playerNames.isEmpty()) {
+                        response.append(playersPrefix)
+                                .append(String.join(", ", playerNames)).append("\n");
+                    } else {
+                        response.append(noplayersonlineMessage).append("\n");
+                    }
+
+                    // 子服之间分隔线
+                    response.append("§a------------------------------------------------------------\n");
+                }
+
+                // 发送格式化消息
+                source.sendMessage(Component.text(response.toString()));
+            }
+        });
         // 检查更新
         checkUpdate();
     }
@@ -179,14 +231,14 @@ public class MeowVeloList {
         nowusingversionMessage = "当前使用版本:";
         checkingupdateMessage = "正在检查更新...";
         checkfailedMessage = "检查更新失败，请检查你的网络状况！";
-        updateavailableMessage = "发现新版本:";
-        updateurlMessage = "新版本下载地址:";
+        updateavailableMessage = "发现新版本：";
+        updateurlMessage = "更新地址：";
         oldversionmaycauseproblemMessage = "旧版本可能会导致问题，请尽快更新！";
-        nowusinglatestversionMessage = "您正在使用最新版本！";
-        reloadedMessage = "配置文件已重载！";
+        nowusinglatestversionMessage = "你已经是最新版本了！";
+        reloadedMessage = "插件配置已重新加载！";
         nopermissionMessage = "你没有权限执行此命令！";
-        serverPrefix = "§e服务器: ";
-        playersPrefix = "§b玩家列表: ";
+        serverPrefix = "§e子服 ";
+        playersPrefix = "§7玩家列表：";
         nowallplayercountMessage = "§6当前在线人数: §e";
         singleserverplayeronlineMessage = " §e个在线玩家";
         noplayersonlineMessage = "§7当前没有在线玩家";
@@ -199,15 +251,15 @@ public class MeowVeloList {
         notenableMessage = "插件未啟用，請前往配置文件中設置！";
         nowusingversionMessage = "當前使用版本:";
         checkingupdateMessage = "正在檢查更新...";
-        checkfailedMessage = "檢查更新失敗，請檢查您的網絡狀況！";
-        updateavailableMessage = "發現新版本:";
-        updateurlMessage = "新版本下載地址:";
-        oldversionmaycauseproblemMessage = "舊版本可能會導致問題，請盡快更新！";
-        nowusinglatestversionMessage = "您正在使用最新版本！";
-        reloadedMessage = "配置文件已重載！";
-        nopermissionMessage = "您沒有權限執行此命令！";
-        serverPrefix = "§e伺服器: ";
-        playersPrefix = "§b玩家: ";
+        checkfailedMessage = "檢查更新失敗，請檢查你的網絡狀況！";
+        updateavailableMessage = "發現新版本：";
+        updateurlMessage = "更新地址：";
+        oldversionmaycauseproblemMessage = "舊版本可能會導致一些問題，請儘快更新！";
+        nowusinglatestversionMessage = "你已經是最新版本了！";
+        reloadedMessage = "插件配置已重新加載！";
+        nopermissionMessage = "你沒有權限執行此命令！";
+        serverPrefix = "§e子服 ";
+        playersPrefix = "§7玩家列表：";
         nowallplayercountMessage = "§6當前線上人數: §e";
         singleserverplayeronlineMessage = " §e個在線玩家";
         noplayersonlineMessage = "§7當前沒有在線玩家";
@@ -215,71 +267,22 @@ public class MeowVeloList {
 
     // 加载英文消息
     private void loadEnglishMessages() {
-        startupMessage = "MeowVeloList has been loaded!";
-        shutdownMessage = "MeowVeloList has been disabled!";
-        notenableMessage = "Plugin not enabled, please set it in the configuration file!";
-        nowusingversionMessage = "Currently using version:";
+        startupMessage = "MeowVeloList plugin loaded!";
+        shutdownMessage = "MeowVeloList plugin unloaded!";
+        notenableMessage = "Plugin not enabled, please set it in the config!";
+        nowusingversionMessage = "Now using version:";
         checkingupdateMessage = "Checking for updates...";
-        checkfailedMessage = "Update check failed, please check your network!";
-        updateavailableMessage = "A new version is available:";
-        updateurlMessage = "Download update at:";
-        oldversionmaycauseproblemMessage = "Old versions may cause problems!";
-        nowusinglatestversionMessage = "You are using the latest version!";
-        reloadedMessage = "Configuration file has been reloaded!";
-        nopermissionMessage = "You do not have permission to execute this command!";
-        serverPrefix = "§eServer: ";
-        playersPrefix = "§bPlayers: ";
+        checkfailedMessage = "Failed to check for updates, please check your network!";
+        updateavailableMessage = "New version available, please update! Version: ";
+        updateurlMessage = "Update URL: ";
+        oldversionmaycauseproblemMessage = "Old version may cause issues, please update ASAP!";
+        nowusinglatestversionMessage = "You're using the latest version!";
+        reloadedMessage = "Plugin configuration reloaded!";
+        nopermissionMessage = "You don't have permission to execute this command!";
+        serverPrefix = "§eServer ";
+        playersPrefix = "§7Player list: ";
         nowallplayercountMessage = "§6Current online players: §e";
         singleserverplayeronlineMessage = " §eplayer(s) online";
         noplayersonlineMessage = "§7No players online";
-    }
-
-    @Override
-    public void execute(CommandSource source, String[] args) {
-        // 权限检查
-        if (!source.hasPermission("meowvelolist.meowlist")) {
-            source.sendMessage(Component.text(nopermissionMessage));  // 权限不足的提示信息
-            return;
-        }
-
-        // 获取代理端总玩家数
-        int totalPlayers = server.getAllPlayers().size();
-        StringBuilder response = new StringBuilder();
-
-        // 标题
-        response.append(Component.text("§a≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡")
-                .decorate(TextDecoration.BOLD)).append("\n");
-            
-        // 代理总在线人数
-        response.append(nowallplayercountMessage).append(totalPlayers).append("\n");
-
-        // 分隔线
-        response.append("§a------------------------------------------------------------\n");
-
-        // 获取每个子服的在线玩家列表
-        for (RegisteredServer registeredServer : server.getAllServers()) {
-            String serverName = registeredServer.getServerInfo().getName();
-            List<String> playerNames = registeredServer.getPlayersConnected().stream()
-                    .map(Player::getUsername)
-                    .collect(Collectors.toList());
-
-            // 每个子服信息
-            response.append(serverPrefix).append(serverName).append(" §7(")
-                    .append(playerNames.size()).append(singleserverplayeronlineMessage).append("§7)").append("\n");
-
-            // 玩家列表
-            if (!playerNames.isEmpty()) {
-                response.append(playersPrefix)
-                        .append(String.join(", ", playerNames)).append("\n");
-            } else {
-                response.append(noplayersonlineMessage).append("\n");
-            }
-
-            // 子服之间分隔线
-            response.append("§a------------------------------------------------------------\n");
-        }
-
-        // 发送格式化消息
-        source.sendMessage(Component.text(response.toString()));
     }
 }
