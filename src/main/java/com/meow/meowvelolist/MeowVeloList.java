@@ -5,19 +5,18 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
-import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.Player;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import net.kyori.adventure.text.Component;
-import org.yaml.snakeyaml.Yaml;
 
 import javax.inject.Inject;
-import java.nio.file.Path;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,6 +28,9 @@ import java.util.stream.Collectors;
         authors = {"Zhang1233"} // 插件作者
 )
 public class MeowVeloList {
+
+    // 插件版本号，更新时手动修改此变量
+    private static final String VERSION = "1.0";
 
     private final ProxyServer server;
 
@@ -62,6 +64,51 @@ public class MeowVeloList {
         server.getCommandManager().register("meowlist", new PlayerInfoCommand(server));
         // 检查更新
         checkUpdate();
+    }
+
+    // 检查更新
+    private void checkUpdate() {
+        // 获取当前版本号
+        String currentVersion = VERSION; // 使用文件顶部定义的版本号
+        String latestVersionUrl = "https://github.com/Zhang12334/MeowVeloList/releases/latest";
+
+        try {
+            String latestVersion = null;
+            HttpURLConnection connection = (HttpURLConnection) new URL(latestVersionUrl).openConnection();
+            connection.setInstanceFollowRedirects(false); // 禁止自动重定向
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
+                String redirectUrl = connection.getHeaderField("Location");
+                if (redirectUrl != null && redirectUrl.contains("github.com")) {
+                    latestVersion = extractVersionFromRedirectUrl(redirectUrl);
+                }
+            }
+
+            if (latestVersion == null) {
+                server.getConsoleCommandSource().sendMessage(Component.text(checkfailedMessage));  
+            } else {
+                if (!currentVersion.equals(latestVersion)) {
+                    server.getConsoleCommandSource().sendMessage(Component.text(updateavailableMessage + latestVersion));
+                    server.getConsoleCommandSource().sendMessage(Component.text(updateurlMessage + latestVersionUrl));  // 这里可以替换成具体的下载链接
+                } else {
+                    server.getConsoleCommandSource().sendMessage(Component.text(nowusinglatestversionMessage));
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            server.getConsoleCommandSource().sendMessage(Component.text(checkfailedMessage));
+        }
+    }
+
+    // 解析重定向后的URL，提取版本信息
+    private String extractVersionFromRedirectUrl(String redirectUrl) {
+        String versionPrefix = "tag/";
+        int versionIndex = redirectUrl.lastIndexOf(versionPrefix);
+        if (versionIndex != -1) {
+            return redirectUrl.substring(versionIndex + versionPrefix.length());
+        }
+        return null;
     }
 
     // 加载语言设置
@@ -169,8 +216,8 @@ public class MeowVeloList {
         playersPrefix = "§bPlayers: ";
     }
 
-    // 显示玩家信息的命令
-    private static class PlayerInfoCommand implements SimpleCommand {
+    // 下面是显示玩家列表的命令实现
+    class PlayerInfoCommand implements SimpleCommand {
         private final ProxyServer server;
 
         public PlayerInfoCommand(ProxyServer server) {
@@ -180,99 +227,31 @@ public class MeowVeloList {
         @Override
         public void execute(Invocation invocation) {
             CommandSource source = invocation.source();
-            
-            // 获取在线玩家总数
-            int totalPlayers = server.getAllPlayers().size();
-            StringBuilder response = new StringBuilder(MeowVeloList.getInstance().nowusingversionMessage + ": " + totalPlayers + "\n");
+            if (!source.hasPermission("meowvelolist.meowlist")) {
+                source.sendMessage(Component.text(nopermissionMessage));
+                return;
+            }
 
-            // 获取每个服务器的在线玩家
+            // 获取代理端总玩家数
+            int totalPlayers = server.getAllPlayers().size();
+            StringBuilder response = new StringBuilder();
+            response.append("当前代理总在线人数: ").append(totalPlayers).append("\n");
+
+            // 获取每个子服的在线玩家列表
             for (RegisteredServer registeredServer : server.getAllServers()) {
                 String serverName = registeredServer.getServerInfo().getName();
                 List<String> playerNames = registeredServer.getPlayersConnected().stream()
                         .map(Player::getUsername)
                         .collect(Collectors.toList());
 
-                response.append(MeowVeloList.getInstance().serverPrefix).append(serverName)
+                response.append(serverPrefix).append(serverName)
                         .append(" §7(").append(playerNames.size()).append(")\n");
-                response.append(MeowVeloList.getInstance().playersPrefix)
+                response.append(playersPrefix)
                         .append(String.join(", ", playerNames)).append("\n");
             }
 
             // 向玩家或控制台发送信息
             source.sendMessage(Component.text(response.toString()));
         }
-
-        @Override
-        public List<String> suggest(Invocation invocation) {
-            return List.of(); // 该命令没有建议
-        }
-
-        @Override
-        public boolean hasPermission(Invocation invocation) {
-            return true; // 所有玩家和控制台都有权限使用此命令
-        }
     }
-
-    // 检查更新
-    private void checkUpdate() {
-        // 获取当前版本号
-        String currentVersion = getDescription().getVersion();
-        String[] githubUrls = {
-            "https://ghp.ci/",
-            "https://raw.fastgit.org/",
-            ""  // 最后使用源地址
-        };
-        String latestVersionUrl = "https://github.com/Zhang12334/MeowVeloList/releases/latest";
-
-        try {
-            String latestVersion = null;
-            for (String url : githubUrls) {
-                // 拼接最终的请求URL
-                HttpURLConnection connection = (HttpURLConnection) new URL(url + latestVersionUrl).openConnection();
-                connection.setInstanceFollowRedirects(false); // 禁止自动重定向
-
-                // 发送请求并获取响应代码
-                int responseCode = connection.getResponseCode();
-
-                // 如果响应是 302，则获取重定向地址
-                if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
-                    String redirectUrl = connection.getHeaderField("Location");
-
-                    // 这里可以解析新版本的下载链接
-                    // 例如重定向 URL 是 https://github.com/Zhang12334/MeowVeloList/releases/tag/1.1
-                    if (redirectUrl != null && redirectUrl.contains("github.com")) {
-                        latestVersion = extractVersionFromRedirectUrl(redirectUrl);
-                        break;
-                    }
-                }
-            }
-
-            if (latestVersion == null) {
-                source.sendMessage(Component.text(checkfailedMessage));  // 如果无法获取最新版本
-            } else {
-                // 比较当前版本和最新版本
-                if (!currentVersion.equals(latestVersion)) {
-                    source.sendMessage(Component.text(updateavailableMessage + latestVersion));
-                    source.sendMessage(Component.text(updateurlMessage + latestVersionUrl));  // 这里可以替换成具体的下载链接
-                } else {
-                    source.sendMessage(Component.text(nowusinglatestversionMessage));
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            source.sendMessage(Component.text(checkfailedMessage));
-        }
-    }
-
-    // 解析重定向后的URL，提取版本信息
-    private String extractVersionFromRedirectUrl(String redirectUrl) {
-        // 解析GitHub的URL，假设格式是 https://github.com/username/project/releases/tag/1.1
-        String versionPrefix = "tag/";
-        int versionIndex = redirectUrl.lastIndexOf(versionPrefix);
-        if (versionIndex != -1) {
-            return redirectUrl.substring(versionIndex + versionPrefix.length());
-        }
-        return null;
-    }
-
 }
