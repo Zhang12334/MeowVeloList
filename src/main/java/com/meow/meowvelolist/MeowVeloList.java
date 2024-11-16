@@ -10,7 +10,6 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import net.kyori.adventure.text.Component;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -88,8 +87,9 @@ public class MeowVeloList {
 
         // 读取配置文件中的内容
         try {
-            YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-            return config.getString("language", "zh_cn");  // 默认返回 zh_cn
+            Yaml yaml = new Yaml();
+            java.util.Map<String, Object> config = yaml.load(java.nio.file.Files.newInputStream(configFile.toPath()));
+            return (String) config.getOrDefault("language", "zh_cn");  // 默认返回 zh_cn
         } catch (Exception e) {
             e.printStackTrace();
             return "zh_cn";  // 如果读取配置失败，默认返回 zh_cn
@@ -102,11 +102,12 @@ public class MeowVeloList {
             // 仅在配置文件不存在时创建
             if (!configFile.exists()) {
                 configFile.createNewFile();
-                YamlConfiguration config = new YamlConfiguration();
-                config.set("language", "zh_cn");  // 默认语言设置为 zh_cn
+                Yaml yaml = new Yaml();
+                java.util.Map<String, Object> config = new java.util.HashMap<>();
+                config.put("language", "zh_cn");  // 默认语言设置为 zh_cn
 
                 // 保存配置文件
-                config.save(configFile);
+                yaml.dump(config, java.nio.file.Files.newBufferedWriter(configFile.toPath()));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -213,11 +214,12 @@ public class MeowVeloList {
 
     // 检查更新
     private void checkUpdate() {
+        // 获取当前版本号
         String currentVersion = getDescription().getVersion();
         String[] githubUrls = {
             "https://ghp.ci/",
             "https://raw.fastgit.org/",
-            "" // 最后使用源地址
+            ""  // 最后使用源地址
         };
         String latestVersionUrl = "https://github.com/Zhang12334/MeowVeloList/releases/latest";
 
@@ -231,21 +233,18 @@ public class MeowVeloList {
                     String redirectUrl = connection.getHeaderField("Location");
                     if (redirectUrl != null && redirectUrl.contains("tag/")) {
                         latestVersion = extractVersionFromUrl(redirectUrl);
-                        break; // 找到版本号后退出循环
+                        break;
                     }
                 }
                 connection.disconnect();
                 if (latestVersion != null) {
-                    break; // 找到版本号后退出循环
+                    break;
                 }
             }
-
             if (latestVersion == null) {
                 getLogger().warning(checkfailedMessage);
                 return;
             }
-
-            // 比较版本号
             if (isVersionGreater(latestVersion, currentVersion)) {
                 getLogger().warning(updateavailableMessage + " v" + latestVersion);
                 getLogger().warning(updateurlMessage + " https://github.com/Zhang12334/MeowVeloList/releases/latest");
@@ -258,7 +257,6 @@ public class MeowVeloList {
         }
     }
 
-    // 版本比较
     private boolean isVersionGreater(String version1, String version2) {
         String[] v1Parts = version1.split("\\.");
         String[] v2Parts = version2.split("\\.");
@@ -274,7 +272,6 @@ public class MeowVeloList {
         return false;
     }
 
-    // 提取版本号
     private String extractVersionFromUrl(String url) {
         int tagIndex = url.indexOf("tag/");
         if (tagIndex != -1) {
