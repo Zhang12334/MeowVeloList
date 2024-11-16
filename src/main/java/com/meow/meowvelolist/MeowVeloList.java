@@ -118,7 +118,7 @@ public class MeowVeloList {
                 source.sendMessage(response.build());  // 发送构建的文本组件
             }
         });
-        server.getCommandManager().register("mlist reload", new SimpleCommand() {
+        server.getCommandManager().register("mlist_reload", new SimpleCommand() {
             @Override
             public void execute(Invocation invocation) {
                 CommandSource source = invocation.source();
