@@ -57,17 +57,29 @@ public class MeowVeloList {
         loadLanguage(); 
         server.getConsoleCommandSource().sendMessage(Component.text(startupMessage));
     }
-    
+    // 注册重载命令 /mlist reload
+    public void registerReloadCommand() {
+        server.getCommandManager().register("mlist reload", (source, args) -> {
+            // 检查执行命令的玩家是否有权限
+            if (!source.hasPermission("meowvelolist.reload")) {
+                source.sendMessage(Component.text(nopermissionMessage));
+                return;
+            }
+            loadLanguage();  // 重载语言文件
+            source.sendMessage(Component.text(reloadsuccessMessage));
+        });
+    }
+
     // 订阅初始化事件
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
-        server.getCommandManager().register("meowlist", new SimpleCommand() {
+        server.getCommandManager().register("mlist", new SimpleCommand() {
             @Override
             public void execute(Invocation invocation) {
                 CommandSource source = invocation.source();
                 String[] args = invocation.arguments();
 
-                if (!source.hasPermission("meowvelolist.meowlist")) {
+                if (!source.hasPermission("meowvelolist.mlist")) {
                     source.sendMessage(Component.text(nopermissionMessage));
                     return;
                 }
@@ -185,8 +197,12 @@ public class MeowVeloList {
             loadChineseSimplifiedMessages();
         } else if ("zh_tc".equalsIgnoreCase(language)) {
             loadChineseTraditionalMessages();
-        } else {
+        } else if ("en".equalsIgnoreCase(language)) {
             loadEnglishMessages();
+        } else {
+            source.sendMessage(Component.text("[Chinese] 未找到对应语言, 使用zh_cn作为默认语言"));
+            source.sendMessage(Component.text("[English] The language file could not be found, using zh_cn as the default language."));
+            loadChineseSimplifiedMessages();
         }
     }
 
@@ -201,7 +217,7 @@ public class MeowVeloList {
         if (!configFile.exists()) {
             createDefaultConfig(configFile);  // 如果文件不存在，创建默认配置文件
         }
-        
+
         try {
             Yaml yaml = new Yaml();
             java.util.Map<String, Object> config = yaml.load(java.nio.file.Files.newInputStream(configFile.toPath()));
@@ -229,38 +245,40 @@ public class MeowVeloList {
 
     // 加载简体中文消息
     private void loadChineseSimplifiedMessages() {
-        startupMessage = "[MeowVeloList] MeowVeloList 已加载！";
+        startupMessage = "[MeowVeloList] MeowVeloList 已加载!";
         nowusingversionMessage = "[MeowVeloList] 当前使用版本:";
         checkingupdateMessage = "[MeowVeloList] 正在检查更新...";
-        checkfailedMessage = "[MeowVeloList] 检查更新失败，请检查你的网络状况！";
+        checkfailedMessage = "[MeowVeloList] 检查更新失败，请检查你的网络状况!";
         updateavailableMessage = "[MeowVeloList] 有新版本可用：";
         updateurlMessage = "[MeowVeloList] 下载地址：";
-        oldversionmaycauseproblemMessage = "[MeowVeloList] 使用旧版本可能会导致问题，请尽快更新！";
-        nowusinglatestversionMessage = "[MeowVeloList] 正在使用最新版本！";
-        nopermissionMessage = "你没有权限执行此命令！";
-        nowallplayercountMessage = "§6当前在线人数：§e";
+        oldversionmaycauseproblemMessage = "[MeowVeloList] 使用旧版本可能会导致问题，请尽快更新!";
+        nowusinglatestversionMessage = "[MeowVeloList] 正在使用最新版本!";
+        nopermissionMessage = "你没有权限执行此命令!";
+        nowallplayercountMessage = "§6当前在线人数: §e";
         singleserverplayeronlineMessage = " §e个在线玩家";
         noplayersonlineMessage = "§7当前没有在线玩家";
         serverPrefix = "§e子服 ";
-        playersPrefix = "§7玩家列表：";
+        playersPrefix = "§7玩家列表: ";
+        reloadsuccessMessage = "§a重载配置文件成功!";
     }
 
     // 加载繁体中文消息
     private void loadChineseTraditionalMessages() {
-        startupMessage = "[MeowVeloList] MeowVeloList 已加載！";
+        startupMessage = "[MeowVeloList] MeowVeloList 已加載!";
         nowusingversionMessage = "[MeowVeloList] 當前使用版本：";
         checkingupdateMessage = "[MeowVeloList] 正在檢查更新...";
-        checkfailedMessage = "[MeowVeloList] 檢查更新失敗，請檢查你的網路狀況！";
+        checkfailedMessage = "[MeowVeloList] 檢查更新失敗，請檢查你的網路狀況!";
         updateavailableMessage = "[MeowVeloList] 有新版本可用：";
         updateurlMessage = "[MeowVeloList] 下載地址：";
-        oldversionmaycauseproblemMessage = "[MeowVeloList] 使用舊版本可能會導致問題，請盡快更新！";
-        nowusinglatestversionMessage = "[MeowVeloList] 正在使用最新版本！";
-        nopermissionMessage = "你沒有權限執行此命令！";
-        nowallplayercountMessage = "§6當前線上人數：§e";
+        oldversionmaycauseproblemMessage = "[MeowVeloList] 使用舊版本可能會導致問題，請盡快更新!";
+        nowusinglatestversionMessage = "[MeowVeloList] 正在使用最新版本!";
+        nopermissionMessage = "你沒有權限執行此命令!";
+        nowallplayercountMessage = "§6當前線上人數: §e";
         singleserverplayeronlineMessage = " §e個在線玩家";
         noplayersonlineMessage = "§7當前沒有在線玩家";
         serverPrefix = "§e子伺服 ";
-        playersPrefix = "§7玩家列表：";
+        playersPrefix = "§7玩家列表: ";
+        reloadsuccessMessage = "§a重載配置文件成功!";
     }
 
     // 加载英文消息
@@ -278,6 +296,7 @@ public class MeowVeloList {
         singleserverplayeronlineMessage = " §eplayer(s) online";
         noplayersonlineMessage = "§7No players online";
         serverPrefix = "§eServer ";
-        playersPrefix = "§7Player list:";
+        playersPrefix = "§7Player list: ";
+        reloadsuccessMessage = "§aReloaded config file successfully!";
     }
 }
