@@ -51,7 +51,6 @@ public class MeowVeloList {
     private final ProxyServer server;
     private Path dataDirectory;
     private final Metrics.Factory metricsFactory;
-    private final Logger logger;
 
     @Inject
     public MeowVeloList(ProxyServer server, @DataDirectory Path dataDirectory) {
@@ -59,7 +58,6 @@ public class MeowVeloList {
         this.dataDirectory = dataDirectory;
         loadLanguage(); 
         server.getConsoleCommandSource().sendMessage(Component.text(startupMessage));
-        this.logger = logger();
         this.metricsFactory = metricsFactory;
     }
 
@@ -206,8 +204,6 @@ public class MeowVeloList {
         } else if ("en".equalsIgnoreCase(language)) {
             loadEnglishMessages();
         } else {
-            logger.info("[Chinese] 未找到对应语言, 使用zh_cn作为默认语言");
-            logger.info("[English] The language file could not be found, using zh_cn as the default language.");
             loadChineseSimplifiedMessages();
         }
     }
