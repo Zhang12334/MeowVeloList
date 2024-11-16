@@ -23,84 +23,54 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Plugin(
-        id = "meowvelolist", // 插件ID
-        name = "MeowVeloList", // 插件名称
-        version = "1.0", // 插件版本
-        description = "一个在 Velocity 端显示玩家列表的插件", // 插件描述
-        authors = {"Zhang1233"} // 插件作者
+        id = "meowvelolist", 
+        name = "MeowVeloList", 
+        version = "1.0", 
+        description = "一个在 Velocity 端显示玩家列表的插件", 
+        authors = {"Zhang1233"} 
 )
 public class MeowVeloList {
 
-    // 插件版本号，更新时手动修改此变量
     private static final String VERSION = "1.0";
-
     private final ProxyServer server;
+    private Path dataDirectory;
 
-    // 语言变量
-    private String startupMessage;
-    private String shutdownMessage;
-    private String notenableMessage;
-    private String nowusingversionMessage;
-    private String checkingupdateMessage;
-    private String checkfailedMessage;
-    private String updateavailableMessage;
-    private String updateurlMessage;
-    private String oldversionmaycauseproblemMessage;
-    private String nowusinglatestversionMessage;
-    private String reloadedMessage;
-    private String nopermissionMessage;
-    private String serverPrefix;
-    private String playersPrefix;
-    private String nowallplayercountMessage;
-    private String singleserverplayeronlineMessage;
-    private String noplayersonlineMessage;
-
-    // 构造函数，注入 ProxyServer 和数据目录路径
     @Inject
     public MeowVeloList(ProxyServer server, @DataDirectory Path dataDirectory) {
         this.server = server;
-        loadLanguage(); // 载入语言
+        this.dataDirectory = dataDirectory;
+        loadLanguage(); 
     }
 
-    // 代理初始化时注册命令
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
-        // 注册 /meowlist 命令
         server.getCommandManager().register("meowlist", new SimpleCommand() {
             @Override
-            public void execute(CommandSource source, String[] args) {
-                // 权限检查
+            public void execute(Invocation invocation) {
+                CommandSource source = invocation.source();
+                String[] args = invocation.arguments();
+
                 if (!source.hasPermission("meowvelolist.meowlist")) {
-                    source.sendMessage(Component.text(nopermissionMessage));  // 权限不足的提示信息
+                    source.sendMessage(Component.text(nopermissionMessage));  
                     return;
                 }
 
-                // 获取代理端总玩家数
                 int totalPlayers = server.getAllPlayers().size();
                 StringBuilder response = new StringBuilder();
-
-                // 标题
                 response.append(Component.text("§a≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡")
                         .decorate(TextDecoration.BOLD)).append("\n");
-
-                // 代理总在线人数
                 response.append(nowallplayercountMessage).append(totalPlayers).append("\n");
-
-                // 分隔线
                 response.append("§a------------------------------------------------------------\n");
 
-                // 获取每个子服的在线玩家列表
                 for (RegisteredServer registeredServer : server.getAllServers()) {
                     String serverName = registeredServer.getServerInfo().getName();
                     List<String> playerNames = registeredServer.getPlayersConnected().stream()
                             .map(Player::getUsername)
                             .collect(Collectors.toList());
 
-                    // 每个子服信息
                     response.append(serverPrefix).append(serverName).append(" §7(")
                             .append(playerNames.size()).append(singleserverplayeronlineMessage).append("§7)").append("\n");
 
-                    // 玩家列表
                     if (!playerNames.isEmpty()) {
                         response.append(playersPrefix)
                                 .append(String.join(", ", playerNames)).append("\n");
@@ -108,28 +78,23 @@ public class MeowVeloList {
                         response.append(noplayersonlineMessage).append("\n");
                     }
 
-                    // 子服之间分隔线
                     response.append("§a------------------------------------------------------------\n");
                 }
 
-                // 发送格式化消息
                 source.sendMessage(Component.text(response.toString()));
             }
         });
-        // 检查更新
         checkUpdate();
     }
 
-    // 检查更新
     private void checkUpdate() {
-        // 获取当前版本号
-        String currentVersion = VERSION; // 使用文件顶部定义的版本号
+        String currentVersion = VERSION; 
         String latestVersionUrl = "https://github.com/Zhang12334/MeowVeloList/releases/latest";
 
         try {
             String latestVersion = null;
             HttpURLConnection connection = (HttpURLConnection) new URL(latestVersionUrl).openConnection();
-            connection.setInstanceFollowRedirects(false); // 禁止自动重定向
+            connection.setInstanceFollowRedirects(false); 
 
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
@@ -144,7 +109,7 @@ public class MeowVeloList {
             } else {
                 if (!currentVersion.equals(latestVersion)) {
                     server.getConsoleCommandSource().sendMessage(Component.text(updateavailableMessage + latestVersion));
-                    server.getConsoleCommandSource().sendMessage(Component.text(updateurlMessage + latestVersionUrl));  // 这里可以替换成具体的下载链接
+                    server.getConsoleCommandSource().sendMessage(Component.text(updateurlMessage + latestVersionUrl));  
                 } else {
                     server.getConsoleCommandSource().sendMessage(Component.text(nowusinglatestversionMessage));
                 }
@@ -155,7 +120,6 @@ public class MeowVeloList {
         }
     }
 
-    // 解析重定向后的URL，提取版本信息
     private String extractVersionFromRedirectUrl(String redirectUrl) {
         String versionPrefix = "tag/";
         int versionIndex = redirectUrl.lastIndexOf(versionPrefix);
@@ -165,57 +129,47 @@ public class MeowVeloList {
         return null;
     }
 
-    // 加载语言设置
     private void loadLanguage() {
-        String language = getLanguageFromConfig(); // 从配置文件获取语言代码
+        String language = getLanguageFromConfig(); 
 
-        // 根据语言代码加载不同的消息内容
         if ("zh_cn".equalsIgnoreCase(language)) {
             loadChineseSimplifiedMessages();
         } else if ("zh_tc".equalsIgnoreCase(language)) {
             loadChineseTraditionalMessages();
         } else {
-            loadEnglishMessages();  // 默认加载英文
+            loadEnglishMessages();
         }
     }
 
-    // 获取配置文件中的语言设置
     private String getLanguageFromConfig() {
-        // 确保插件目录存在
-        File pluginDir = new File(getDataFolder(), "MeowVeloList");
+        File pluginDir = new File(dataDirectory.toFile(), "MeowVeloList");
         if (!pluginDir.exists()) {
             pluginDir.mkdirs();
         }
 
-        // 设置配置文件路径为 plugins/MeowVeloList/config.yml
         File configFile = new File(pluginDir, "config.yml");
         if (!configFile.exists()) {
-            // 如果配置文件不存在，则创建一个默认配置文件
             createDefaultConfig(configFile);
         }
 
-        // 读取配置文件中的内容
         try {
             Yaml yaml = new Yaml();
             java.util.Map<String, Object> config = yaml.load(java.nio.file.Files.newInputStream(configFile.toPath()));
-            return (String) config.getOrDefault("language", "zh_cn");  // 默认返回 zh_cn
+            return (String) config.getOrDefault("language", "zh_cn");
         } catch (Exception e) {
             e.printStackTrace();
-            return "zh_cn";  // 如果读取配置失败，默认返回 zh_cn
+            return "zh_cn";
         }
     }
 
-    // 创建一个默认的配置文件
     private void createDefaultConfig(File configFile) {
         try {
-            // 仅在配置文件不存在时创建
             if (!configFile.exists()) {
                 configFile.createNewFile();
                 Yaml yaml = new Yaml();
                 java.util.Map<String, Object> config = new java.util.HashMap<>();
-                config.put("language", "zh_cn");  // 默认语言设置为 zh_cn
+                config.put("language", "zh_cn");
 
-                // 保存配置文件
                 yaml.dump(config, java.nio.file.Files.newBufferedWriter(configFile.toPath()));
             }
         } catch (IOException e) {
