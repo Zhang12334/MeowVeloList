@@ -46,6 +46,7 @@ public class MeowVeloList {
     private String noplayersonlineMessage;
     private String serverPrefix;
     private String playersPrefix;
+    private String reloadsuccessMessage;
     private static final String VERSION = "1.0";
     private final ProxyServer server;
     private Path dataDirectory;
@@ -56,18 +57,6 @@ public class MeowVeloList {
         this.dataDirectory = dataDirectory;
         loadLanguage(); 
         server.getConsoleCommandSource().sendMessage(Component.text(startupMessage));
-    }
-    // 注册重载命令 /mlist reload
-    public void registerReloadCommand() {
-        server.getCommandManager().register("mlist reload", (source, args) -> {
-            // 检查执行命令的玩家是否有权限
-            if (!source.hasPermission("meowvelolist.reload")) {
-                source.sendMessage(Component.text(nopermissionMessage));
-                return;
-            }
-            loadLanguage();  // 重载语言文件
-            source.sendMessage(Component.text(reloadsuccessMessage));
-        });
     }
 
     // 订阅初始化事件
@@ -127,7 +116,18 @@ public class MeowVeloList {
                 source.sendMessage(response.build());  // 发送构建的文本组件
             }
         });
-
+        server.getCommandManager().register("mlist reload", new SimpleCommand() {
+            @Override
+            public void execute(Invocation invocation) {
+                CommandSource source = invocation.source();
+                if (!source.hasPermission("meowvelolist.reload")) {
+                    source.sendMessage(Component.text(nopermissionMessage));
+                    return;
+                }
+                loadLanguage();  // 重载语言文件
+                source.sendMessage(Component.text(reloadsuccessMessage));
+            }
+        });
         // 异步执行更新检查
         CompletableFuture.runAsync(() -> checkUpdate());
     }
