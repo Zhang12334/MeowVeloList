@@ -57,7 +57,8 @@ public class MeowVeloList {
         this.dataDirectory = dataDirectory;
         loadLanguage(); 
     }
-
+    
+    // 订阅初始化事件
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
         server.getCommandManager().register("meowlist", new SimpleCommand() {
@@ -67,16 +68,21 @@ public class MeowVeloList {
                 String[] args = invocation.arguments();
 
                 if (!source.hasPermission("meowvelolist.meowlist")) {
-                    source.sendMessage(Component.text(nopermissionMessage));  
+                    source.sendMessage(Component.text("[MeowVeloList] " + nopermissionMessage));  
                     return;
                 }
 
                 int totalPlayers = server.getAllPlayers().size();
                 StringBuilder response = new StringBuilder();
-                response.append(Component.text("§a≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡")
-                        .decorate(TextDecoration.BOLD)).append("\n");
-                response.append(nowallplayercountMessage).append(totalPlayers).append("\n");
-                response.append("§a------------------------------------------------------------\n");
+
+                // 使用全新的分隔符
+                String separator = "§a≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡";
+
+                response.append(Component.text(separator).decorate(TextDecoration.BOLD)).append("\n");
+                response.append("[MeowVeloList] " + nowallplayercountMessage).append(totalPlayers).append("\n");
+                response.append("[MeowVeloList] " + separator).append("\n"); // 这行已替换为新的分隔符
+
+                boolean firstServer = true; // 用于控制是否是第一个服务器
 
                 for (RegisteredServer registeredServer : server.getAllServers()) {
                     String serverName = registeredServer.getServerInfo().getName();
@@ -84,18 +90,26 @@ public class MeowVeloList {
                             .map(Player::getUsername)
                             .collect(Collectors.toList());
 
-                    response.append(serverPrefix).append(serverName).append(" §7(")
-                            .append(playerNames.size()).append(singleserverplayeronlineMessage).append("§7)").append("\n");
-
-                    if (!playerNames.isEmpty()) {
-                        response.append(playersPrefix)
-                                .append(String.join(", ", playerNames)).append("\n");
-                    } else {
-                        response.append(noplayersonlineMessage).append("\n");
+                    // 如果不是第一个服务器，添加分隔符
+                    if (!firstServer) {
+                        response.append("[MeowVeloList] " + separator).append("\n");
                     }
 
-                    response.append("§a------------------------------------------------------------\n");
+                    // 添加当前服务器信息
+                    response.append("[MeowVeloList] " + serverPrefix).append(serverName).append(" §7(")
+                            .append(playerNames.size()).append(singleserverplayeronlineMessage).append("§7)").append("\n");
+
+                    // 玩家信息
+                    if (!playerNames.isEmpty()) {
+                        response.append("[MeowVeloList] " + playersPrefix).append(String.join(", ", playerNames)).append("\n");
+                    } else {
+                        response.append("[MeowVeloList] " + noplayersonlineMessage).append("\n");
+                    }
+
+                    firstServer = false; // 第一个服务器输出后，设置为false，后续服务器添加分隔符
                 }
+
+                response.append("[MeowVeloList] " + separator).append("\n"); // 输出最后一个服务器信息后再加上分隔符
 
                 source.sendMessage(Component.text(response.toString()));
             }
@@ -103,6 +117,7 @@ public class MeowVeloList {
         checkUpdate();
     }
 
+    // 检查更新
     private void checkUpdate() {
         String currentVersion = VERSION; 
         String latestVersionUrl = "https://github.com/Zhang12334/MeowVeloList/releases/latest";
@@ -121,18 +136,18 @@ public class MeowVeloList {
             }
 
             if (latestVersion == null) {
-                server.getConsoleCommandSource().sendMessage(Component.text(checkfailedMessage));  
+                server.getConsoleCommandSource().sendMessage(Component.text("[MeowVeloList] " + checkfailedMessage));  
             } else {
                 if (!currentVersion.equals(latestVersion)) {
-                    server.getConsoleCommandSource().sendMessage(Component.text(updateavailableMessage + latestVersion));
-                    server.getConsoleCommandSource().sendMessage(Component.text(updateurlMessage + latestVersionUrl));  
+                    server.getConsoleCommandSource().sendMessage(Component.text("[MeowVeloList] " + updateavailableMessage + latestVersion));
+                    server.getConsoleCommandSource().sendMessage(Component.text("[MeowVeloList] " + updateurlMessage + latestVersionUrl));  
                 } else {
-                    server.getConsoleCommandSource().sendMessage(Component.text(nowusinglatestversionMessage));
+                    server.getConsoleCommandSource().sendMessage(Component.text("[MeowVeloList] " + nowusinglatestversionMessage));
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
-            server.getConsoleCommandSource().sendMessage(Component.text(checkfailedMessage));
+            server.getConsoleCommandSource().sendMessage(Component.text("[MeowVeloList] " + checkfailedMessage));
         }
     }
 
@@ -145,6 +160,7 @@ public class MeowVeloList {
         return null;
     }
 
+    // 加载语言设置
     private void loadLanguage() {
         String language = getLanguageFromConfig(); 
 
@@ -195,64 +211,64 @@ public class MeowVeloList {
 
     // 加载简体中文消息
     private void loadChineseSimplifiedMessages() {
-        startupMessage = "MeowVeloList 已加载！";
-        shutdownMessage = "MeowVeloList 已卸载！";
-        notenableMessage = "插件未启用，请前往配置文件中设置！";
-        nowusingversionMessage = "当前使用版本:";
-        checkingupdateMessage = "正在检查更新...";
-        checkfailedMessage = "检查更新失败，请检查你的网络状况！";
-        updateavailableMessage = "有新版本可用：";
-        updateurlMessage = "下载地址：";
-        oldversionmaycauseproblemMessage = "旧版本可能会导致一些问题，请及时更新。";
-        nowusinglatestversionMessage = "你正在使用最新版本。";
-        reloadedMessage = "配置已重新加载！";
-        nopermissionMessage = "你没有权限执行此命令！";
-        serverPrefix = "服务器 ";
-        playersPrefix = "玩家: ";
-        nowallplayercountMessage = "当前在线人数: ";
-        singleserverplayeronlineMessage = "个玩家在线";
-        noplayersonlineMessage = "当前没有在线玩家";
+        startupMessage = "[MeowVeloList] MeowVeloList 已加载！";
+        shutdownMessage = "[MeowVeloList] MeowVeloList 已卸载！";
+        notenableMessage = "[MeowVeloList] 插件未启用，请前往配置文件中设置！";
+        nowusingversionMessage = "[MeowVeloList] 当前使用版本:";
+        checkingupdateMessage = "[MeowVeloList] 正在检查更新...";
+        checkfailedMessage = "[MeowVeloList] 检查更新失败，请检查你的网络状况！";
+        updateavailableMessage = "[MeowVeloList] 有新版本可用：";
+        updateurlMessage = "[MeowVeloList] 下载地址：";
+        oldversionmaycauseproblemMessage = "[MeowVeloList] 使用旧版本可能会导致问题！";
+        nowusinglatestversionMessage = "[MeowVeloList] 你已经是最新版本！";
+        reloadedMessage = "[MeowVeloList] 插件已重新加载！";
+        nopermissionMessage = "[MeowVeloList] 你没有权限执行此命令！";
+        serverPrefix = "[MeowVeloList] 服务器：";
+        playersPrefix = "[MeowVeloList] 玩家：";
+        nowallplayercountMessage = "§6当前在线人数：§e";
+        singleserverplayeronlineMessage = " §e个在线玩家";
+        noplayersonlineMessage = "§7当前没有在线玩家";
     }
 
     // 加载繁体中文消息
     private void loadChineseTraditionalMessages() {
-        startupMessage = "MeowVeloList 已載入！";
-        shutdownMessage = "MeowVeloList 已卸載！";
-        notenableMessage = "插件未啟用，請前往配置文件中設置！";
-        nowusingversionMessage = "當前使用版本:";
-        checkingupdateMessage = "正在檢查更新...";
-        checkfailedMessage = "檢查更新失敗，請檢查你的網絡狀況！";
-        updateavailableMessage = "有新版本可用：";
-        updateurlMessage = "下載地址：";
-        oldversionmaycauseproblemMessage = "舊版本可能會導致一些問題，請及時更新。";
-        nowusinglatestversionMessage = "你正在使用最新版本。";
-        reloadedMessage = "配置已重新加載！";
-        nopermissionMessage = "你沒有權限執行此命令！";
-        serverPrefix = "伺服器 ";
-        playersPrefix = "玩家: ";
-        nowallplayercountMessage = "當前線上人數: ";
-        singleserverplayeronlineMessage = "個在線玩家";
-        noplayersonlineMessage = "當前沒有在線玩家";
+        startupMessage = "[MeowVeloList] MeowVeloList 已加載！";
+        shutdownMessage = "[MeowVeloList] MeowVeloList 已卸載！";
+        notenableMessage = "[MeowVeloList] 插件未啟用，請前往配置文件中設置！";
+        nowusingversionMessage = "[MeowVeloList] 當前使用版本:";
+        checkingupdateMessage = "[MeowVeloList] 正在檢查更新...";
+        checkfailedMessage = "[MeowVeloList] 檢查更新失敗，請檢查你的網絡狀況！";
+        updateavailableMessage = "[MeowVeloList] 有新版本可用：";
+        updateurlMessage = "[MeowVeloList] 下載地址：";
+        oldversionmaycauseproblemMessage = "[MeowVeloList] 使用舊版本可能會導致問題！";
+        nowusinglatestversionMessage = "[MeowVeloList] 你已經是最新版本！";
+        reloadedMessage = "[MeowVeloList] 插件已重新加載！";
+        nopermissionMessage = "[MeowVeloList] 你沒有權限執行此命令！";
+        serverPrefix = "[MeowVeloList] 伺服器：";
+        playersPrefix = "[MeowVeloList] 玩家：";
+        nowallplayercountMessage = "§6當前線上人數：§e";
+        singleserverplayeronlineMessage = " §e個在線玩家";
+        noplayersonlineMessage = "§7當前沒有在線玩家";
     }
 
     // 加载英文消息
     private void loadEnglishMessages() {
-        startupMessage = "MeowVeloList has loaded!";
-        shutdownMessage = "MeowVeloList has unloaded!";
-        notenableMessage = "Plugin not enabled, please set it in the config!";
-        nowusingversionMessage = "Now using version:";
-        checkingupdateMessage = "Checking for updates...";
-        checkfailedMessage = "Failed to check for updates, please check your network connection!";
-        updateavailableMessage = "An update is available:";
-        updateurlMessage = "Download URL:";
-        oldversionmaycauseproblemMessage = "An old version may cause problems, please update as soon as possible.";
-        nowusinglatestversionMessage = "You are using the latest version.";
-        reloadedMessage = "Configuration has been reloaded!";
-        nopermissionMessage = "You don't have permission to execute this command!";
-        serverPrefix = "Server ";
-        playersPrefix = "Players: ";
-        nowallplayercountMessage = "Current online players: ";
-        singleserverplayeronlineMessage = " player(s) online";
-        noplayersonlineMessage = "No players online";
+        startupMessage = "[MeowVeloList] MeowVeloList loaded!";
+        shutdownMessage = "[MeowVeloList] MeowVeloList unloaded!";
+        notenableMessage = "[MeowVeloList] Plugin is not enabled, please enable it in the config!";
+        nowusingversionMessage = "[MeowVeloList] Now using version:";
+        checkingupdateMessage = "[MeowVeloList] Checking for updates...";
+        checkfailedMessage = "[MeowVeloList] Failed to check for updates, please check your network!";
+        updateavailableMessage = "[MeowVeloList] New version available:";
+        updateurlMessage = "[MeowVeloList] Download link:";
+        oldversionmaycauseproblemMessage = "[MeowVeloList] Using an old version may cause problems!";
+        nowusinglatestversionMessage = "[MeowVeloList] You are using the latest version!";
+        reloadedMessage = "[MeowVeloList] Plugin reloaded!";
+        nopermissionMessage = "[MeowVeloList] You do not have permission to execute this command!";
+        serverPrefix = "[MeowVeloList] Server:";
+        playersPrefix = "[MeowVeloList] Players:";
+        nowallplayercountMessage = "§6Current online players: §e";
+        singleserverplayeronlineMessage = " §eplayer(s) online";
+        noplayersonlineMessage = "§7No players online";
     }
 }
