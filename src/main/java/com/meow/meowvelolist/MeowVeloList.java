@@ -191,7 +191,7 @@ public class MeowVeloList {
     }
 
     private String getLanguageFromConfig() {
-        File pluginDir = new File("MeowVeloList");
+        File pluginDir = new File(dataDirectory.toFile());
         if (!pluginDir.exists()) {
             pluginDir.mkdirs();
         }
