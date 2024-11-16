@@ -240,7 +240,7 @@ public class MeowVeloList {
         
         // 权限检查
         if (!source.hasPermission("meowvelolist.meowlist")) {
-            source.sendMessage(Component.text(nopermissionMessage));
+            source.sendMessage(Component.text(nopermissionMessage));  // 权限不足的提示信息
             return;
         }
 
@@ -251,7 +251,7 @@ public class MeowVeloList {
         // 标题
         response.append(Component.text("§a≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡")
                 .decorate(TextDecoration.BOLD)).append("\n");
-        
+            
         // 代理总在线人数
         response.append(nowallplayercountMessage).append(totalPlayers).append("\n");
 
@@ -284,5 +284,6 @@ public class MeowVeloList {
         // 发送格式化消息
         source.sendMessage(Component.text(response.toString()));
     }
+
 
 }
