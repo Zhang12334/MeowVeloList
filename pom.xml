@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -16,8 +15,16 @@
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
 
+    <!-- Adding PaperMC repository -->
+    <repositories>
+        <repository>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
+        </repository>
+    </repositories>
+
     <dependencies>
-        <!-- Velocity API -->
+        <!-- Velocity API dependency -->
         <dependency>
             <groupId>com.velocitypowered</groupId>
             <artifactId>velocity-api</artifactId>
@@ -25,28 +32,25 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Gson (for JSON parsing) -->
+        <!-- Other dependencies like gson, guava etc. -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.8.8</version>
         </dependency>
 
-        <!-- Guava (for utility methods) -->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>33.3.1-jre</version>
         </dependency>
 
-        <!-- Adventure API (for text formatting) -->
         <dependency>
             <groupId>net.kyori</groupId>
             <artifactId>adventure-api</artifactId>
             <version>4.17.0</version>
         </dependency>
 
-        <!-- SLF4J API (for logging) -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
