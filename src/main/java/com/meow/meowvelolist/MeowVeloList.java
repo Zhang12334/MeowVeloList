@@ -42,6 +42,8 @@ public class MeowVeloList {
     private String nowallplayercountMessage;
     private String singleserverplayeronlineMessage;
     private String noplayersonlineMessage;
+    private String serverPrefix;
+    private String playersPrefix;
     private static final String VERSION = "1.0";
     private final ProxyServer server;
     private Path dataDirectory;
@@ -222,6 +224,8 @@ public class MeowVeloList {
         nowallplayercountMessage = "§6当前在线人数：§e";
         singleserverplayeronlineMessage = " §e个在线玩家";
         noplayersonlineMessage = "§7当前没有在线玩家";
+        serverPrefix = "§e子服 ";
+        playersPrefix = "§7玩家列表：";
     }
 
     // 加载繁体中文消息
@@ -238,6 +242,8 @@ public class MeowVeloList {
         nowallplayercountMessage = "§6當前線上人數：§e";
         singleserverplayeronlineMessage = " §e個在線玩家";
         noplayersonlineMessage = "§7當前沒有在線玩家";
+        serverPrefix = "§e子伺服 ";
+        playersPrefix = "§7玩家列表：";
     }
 
     // 加载英文消息
@@ -254,5 +260,7 @@ public class MeowVeloList {
         nowallplayercountMessage = "§6Current online players: §e";
         singleserverplayeronlineMessage = " §eplayer(s) online";
         noplayersonlineMessage = "§7No players online";
+        serverPrefix = "§eServer ";
+        playersPrefix = "§7Player list:";
     }
 }
