@@ -82,7 +82,7 @@ public class MeowVeloList {
                 // 标题
                 response.append(Component.text("§a≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡")
                         .decorate(TextDecoration.BOLD)).append("\n");
-                
+
                 // 代理总在线人数
                 response.append(nowallplayercountMessage).append(totalPlayers).append("\n");
 
@@ -231,58 +231,58 @@ public class MeowVeloList {
         nowusingversionMessage = "当前使用版本:";
         checkingupdateMessage = "正在检查更新...";
         checkfailedMessage = "检查更新失败，请检查你的网络状况！";
-        updateavailableMessage = "发现新版本：";
-        updateurlMessage = "更新地址：";
-        oldversionmaycauseproblemMessage = "旧版本可能会导致问题，请尽快更新！";
-        nowusinglatestversionMessage = "你已经是最新版本了！";
-        reloadedMessage = "插件配置已重新加载！";
+        updateavailableMessage = "有新版本可用：";
+        updateurlMessage = "下载地址：";
+        oldversionmaycauseproblemMessage = "旧版本可能会导致一些问题，请及时更新。";
+        nowusinglatestversionMessage = "你正在使用最新版本。";
+        reloadedMessage = "配置已重新加载！";
         nopermissionMessage = "你没有权限执行此命令！";
-        serverPrefix = "§e子服 ";
-        playersPrefix = "§7玩家列表：";
-        nowallplayercountMessage = "§6当前在线人数: §e";
-        singleserverplayeronlineMessage = " §e个在线玩家";
-        noplayersonlineMessage = "§7当前没有在线玩家";
+        serverPrefix = "服务器 ";
+        playersPrefix = "玩家: ";
+        nowallplayercountMessage = "当前在线人数: ";
+        singleserverplayeronlineMessage = "个玩家在线";
+        noplayersonlineMessage = "当前没有在线玩家";
     }
 
     // 加载繁体中文消息
     private void loadChineseTraditionalMessages() {
-        startupMessage = "MeowVeloList 已加載！";
+        startupMessage = "MeowVeloList 已載入！";
         shutdownMessage = "MeowVeloList 已卸載！";
         notenableMessage = "插件未啟用，請前往配置文件中設置！";
         nowusingversionMessage = "當前使用版本:";
         checkingupdateMessage = "正在檢查更新...";
         checkfailedMessage = "檢查更新失敗，請檢查你的網絡狀況！";
-        updateavailableMessage = "發現新版本：";
-        updateurlMessage = "更新地址：";
-        oldversionmaycauseproblemMessage = "舊版本可能會導致一些問題，請儘快更新！";
-        nowusinglatestversionMessage = "你已經是最新版本了！";
-        reloadedMessage = "插件配置已重新加載！";
+        updateavailableMessage = "有新版本可用：";
+        updateurlMessage = "下載地址：";
+        oldversionmaycauseproblemMessage = "舊版本可能會導致一些問題，請及時更新。";
+        nowusinglatestversionMessage = "你正在使用最新版本。";
+        reloadedMessage = "配置已重新加載！";
         nopermissionMessage = "你沒有權限執行此命令！";
-        serverPrefix = "§e子服 ";
-        playersPrefix = "§7玩家列表：";
-        nowallplayercountMessage = "§6當前線上人數: §e";
-        singleserverplayeronlineMessage = " §e個在線玩家";
-        noplayersonlineMessage = "§7當前沒有在線玩家";
+        serverPrefix = "伺服器 ";
+        playersPrefix = "玩家: ";
+        nowallplayercountMessage = "當前線上人數: ";
+        singleserverplayeronlineMessage = "個在線玩家";
+        noplayersonlineMessage = "當前沒有在線玩家";
     }
 
     // 加载英文消息
     private void loadEnglishMessages() {
-        startupMessage = "MeowVeloList plugin loaded!";
-        shutdownMessage = "MeowVeloList plugin unloaded!";
+        startupMessage = "MeowVeloList has loaded!";
+        shutdownMessage = "MeowVeloList has unloaded!";
         notenableMessage = "Plugin not enabled, please set it in the config!";
         nowusingversionMessage = "Now using version:";
         checkingupdateMessage = "Checking for updates...";
-        checkfailedMessage = "Failed to check for updates, please check your network!";
-        updateavailableMessage = "New version available, please update! Version: ";
-        updateurlMessage = "Update URL: ";
-        oldversionmaycauseproblemMessage = "Old version may cause issues, please update ASAP!";
-        nowusinglatestversionMessage = "You're using the latest version!";
-        reloadedMessage = "Plugin configuration reloaded!";
+        checkfailedMessage = "Failed to check for updates, please check your network connection!";
+        updateavailableMessage = "An update is available:";
+        updateurlMessage = "Download URL:";
+        oldversionmaycauseproblemMessage = "An old version may cause problems, please update as soon as possible.";
+        nowusinglatestversionMessage = "You are using the latest version.";
+        reloadedMessage = "Configuration has been reloaded!";
         nopermissionMessage = "You don't have permission to execute this command!";
-        serverPrefix = "§eServer ";
-        playersPrefix = "§7Player list: ";
-        nowallplayercountMessage = "§6Current online players: §e";
-        singleserverplayeronlineMessage = " §eplayer(s) online";
-        noplayersonlineMessage = "§7No players online";
+        serverPrefix = "Server ";
+        playersPrefix = "Players: ";
+        nowallplayercountMessage = "Current online players: ";
+        singleserverplayeronlineMessage = " player(s) online";
+        noplayersonlineMessage = "No players online";
     }
 }
