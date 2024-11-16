@@ -56,6 +56,13 @@
             <artifactId>slf4j-api</artifactId>
             <version>2.0.16</version>
         </dependency>
+
+        <!-- Add Snakeyaml dependency -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>2.0</version> <!-- You can change this version if needed -->
+        </dependency>
     </dependencies>
 
     <build>
