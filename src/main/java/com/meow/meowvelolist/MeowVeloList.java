@@ -73,6 +73,8 @@ public class MeowVeloList {
     // 订阅初始化事件
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
+        int pluginId = 23904; // <-- Replace with the id of your plugin!
+        Metrics metrics = metricsFactory.make(this, pluginId);
         server.getCommandManager().register("mlist", new SimpleCommand() {
             @Override
             public void execute(Invocation invocation) {
