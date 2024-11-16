@@ -52,8 +52,8 @@ public class MeowVeloList {
     public MeowVeloList(ProxyServer server, @DataDirectory Path dataDirectory) {
         this.server = server;
         this.dataDirectory = dataDirectory;
-        server.getConsoleCommandSource().sendMessage(Component.text(startupMessage));
         loadLanguage(); 
+        server.getConsoleCommandSource().sendMessage(Component.text(startupMessage));
     }
     
     // 订阅初始化事件
