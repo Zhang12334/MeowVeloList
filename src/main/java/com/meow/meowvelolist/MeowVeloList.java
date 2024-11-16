@@ -202,8 +202,8 @@ public class MeowVeloList {
         } else if ("en".equalsIgnoreCase(language)) {
             loadEnglishMessages();
         } else {
-            server.getConsole().sendMessage(Component.text("[Chinese] 未找到对应语言, 使用zh_cn作为默认语言"));
-            server.getConsole().sendMessage(Component.text("[English] The language file could not be found, using zh_cn as the default language."));
+            logger.info("[Chinese] 未找到对应语言, 使用zh_cn作为默认语言");
+            logger.info("[English] The language file could not be found, using zh_cn as the default language.");
             loadChineseSimplifiedMessages();
         }
     }
