@@ -66,19 +66,19 @@ public class MeowVeloList {
                 String[] args = invocation.arguments();
 
                 if (!source.hasPermission("meowvelolist.meowlist")) {
-                    source.sendMessage(Component.text(nopermissionMessage));  
+                    source.sendMessage(Component.text(nopermissionMessage));
                     return;
                 }
 
                 int totalPlayers = server.getAllPlayers().size();
-                StringBuilder response = new StringBuilder();
+                TextComponent.Builder response = Component.text();
 
                 // 使用全新的分隔符
                 String separator = "§a≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡";
 
-                response.append(Component.text(separator).decorate(TextDecoration.BOLD)).append("\n");
-                response.append(nowallplayercountMessage).append(totalPlayers).append("\n");
-                response.append(separator).append("\n"); // 这行已替换为新的分隔符
+                response.append(Component.text(separator).decorate(TextDecoration.BOLD)).append(Component.newline());
+                response.append(Component.text(nowallplayercountMessage + totalPlayers)).append(Component.newline());
+                response.append(Component.text(separator)).append(Component.newline()); // 这行已替换为新的分隔符
 
                 boolean firstServer = true; // 用于控制是否是第一个服务器
 
@@ -90,66 +90,79 @@ public class MeowVeloList {
 
                     // 如果不是第一个服务器，添加分隔符
                     if (!firstServer) {
-                        response.append(separator).append("\n"); // 每个服务器之间添加分隔符
+                        response.append(Component.text(separator)).append(Component.newline()); // 每个服务器之间添加分隔符
                     }
 
                     // 添加当前服务器信息
-                    response.append(serverPrefix).append(serverName).append(" §7(")
-                            .append(playerNames.size()).append(singleserverplayeronlineMessage).append("§7)").append("\n");
+                    response.append(Component.text(serverPrefix + serverName + " §7(" + playerNames.size() + singleserverplayeronlineMessage + "§7)").append(Component.newline()));
 
                     // 玩家信息
                     if (!playerNames.isEmpty()) {
-                        response.append(playersPrefix).append(String.join(", ", playerNames)).append("\n");
+                        response.append(Component.text(playersPrefix + String.join(", ", playerNames)).append(Component.newline()));
                     } else {
-                        response.append(noplayersonlineMessage).append("\n");
+                        response.append(Component.text(noplayersonlineMessage)).append(Component.newline());
                     }
 
                     firstServer = false; // 第一个服务器输出后，设置为false，后续服务器添加分隔符
                 }
 
-                response.append(separator).append("\n"); // 输出最后一个服务器信息后再加上分隔符
+                response.append(Component.text(separator)).append(Component.newline()); // 输出最后一个服务器信息后再加上分隔符
 
-                source.sendMessage(Component.text(response.toString()));
+                source.sendMessage(response.build());  // 发送构建的文本组件
             }
         });
+
         // 异步执行更新检查
         CompletableFuture.runAsync(() -> checkUpdate());
     }
 
-    // 检查更新
     private void checkUpdate() {
-        String currentVersion = VERSION; 
+        String currentVersion = VERSION;
         server.getConsoleCommandSource().sendMessage(Component.text(nowusingversionMessage + currentVersion));
         server.getConsoleCommandSource().sendMessage(Component.text(checkingupdateMessage));
         String latestVersionUrl = "https://github.com/Zhang12334/MeowVeloList/releases/latest";
 
-        try {
-            String latestVersion = null;
-            HttpURLConnection connection = (HttpURLConnection) new URL(latestVersionUrl).openConnection();
-            connection.setInstanceFollowRedirects(false); 
+        // 可用的前缀列表
+        List<String> prefixList = Arrays.asList(
+                "https://ghp.ci/",   
+                ""
+        );
 
-            int responseCode = connection.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
-                String redirectUrl = connection.getHeaderField("Location");
-                if (redirectUrl != null && redirectUrl.contains("github.com")) {
-                    latestVersion = extractVersionFromRedirectUrl(redirectUrl);
+        String latestVersion = null;
+
+        // 逐一尝试不同前缀
+        for (String prefix : prefixList) {
+            try {
+                String urlToCheck = prefix + latestVersionUrl;
+
+                // 发送请求
+                HttpURLConnection connection = (HttpURLConnection) new URL(urlToCheck).openConnection();
+                connection.setInstanceFollowRedirects(false); // 防止自动跳转
+
+                int responseCode = connection.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
+                    String redirectUrl = connection.getHeaderField("Location");
+                    if (redirectUrl != null && redirectUrl.contains("github.com")) {
+                        latestVersion = extractVersionFromRedirectUrl(redirectUrl);
+                        break;  // 成功获取版本后退出循环
+                    }
                 }
+            } catch (IOException e) {
+                // 连接失败，尝试下一个前缀
+                continue;
             }
+        }
 
-            if (latestVersion == null) {
-                server.getConsoleCommandSource().sendMessage(Component.text(checkfailedMessage));  
+        if (latestVersion == null) {
+            server.getConsoleCommandSource().sendMessage(Component.text(checkfailedMessage));  
+        } else {
+            if (!currentVersion.equals(latestVersion)) {
+                server.getConsoleCommandSource().sendMessage(Component.text(updateavailableMessage + latestVersion));
+                server.getConsoleCommandSource().sendMessage(Component.text(updateurlMessage + latestVersionUrl));  
+                server.getConsoleCommandSource().sendMessage(Component.text(oldversionmaycauseproblemMessage));
             } else {
-                if (!currentVersion.equals(latestVersion)) {
-                    server.getConsoleCommandSource().sendMessage(Component.text(updateavailableMessage + latestVersion));
-                    server.getConsoleCommandSource().sendMessage(Component.text(updateurlMessage + latestVersionUrl));  
-                    server.getConsoleCommandSource().sendMessage(Component.text(oldversionmaycauseproblemMessage));
-                } else {
-                    server.getConsoleCommandSource().sendMessage(Component.text(nowusinglatestversionMessage));
-                }
+                server.getConsoleCommandSource().sendMessage(Component.text(nowusinglatestversionMessage));
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            server.getConsoleCommandSource().sendMessage(Component.text(checkfailedMessage));
         }
     }
 
