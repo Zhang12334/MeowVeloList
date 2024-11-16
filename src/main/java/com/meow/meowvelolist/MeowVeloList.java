@@ -112,7 +112,8 @@ public class MeowVeloList {
                 source.sendMessage(Component.text(response.toString()));
             }
         });
-        checkUpdate();
+        // 异步执行更新检查
+        CompletableFuture.runAsync(() -> checkUpdate());
     }
 
     // 检查更新
