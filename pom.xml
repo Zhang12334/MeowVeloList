@@ -9,8 +9,7 @@
     <packaging>jar</packaging>
 
     <name>MeowVeloList</name>
-    <description>A plugin to display the total number of online players and player lists per server.</description>
-    <url>http://yourpluginwebsite.com</url>
+    <description>A plugin that displays the player list on the Velocity proxy.</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -18,6 +17,13 @@
         <maven.compiler.target>17</maven.compiler.target>
         <velocity-api.version>3.1.1</velocity-api.version>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>velocity</id>
+            <url>https://repo.velocitypowered.com/repository/maven-public/</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <!-- Velocity API Dependency -->
