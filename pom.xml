@@ -12,10 +12,11 @@
     <description>A plugin that displays the player list on the Velocity proxy.</description>
 
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Define the version for velocity-api -->
+        <velocity-api.version>3.1.0</velocity-api.version>
+        <!-- Java source and target version -->
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <velocity-api.version>3.1.1</velocity-api.version>
     </properties>
 
     <repositories>
