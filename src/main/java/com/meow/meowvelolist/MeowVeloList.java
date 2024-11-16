@@ -57,6 +57,7 @@ public class MeowVeloList {
         this.dataDirectory = dataDirectory;
         loadLanguage(); 
         server.getConsoleCommandSource().sendMessage(Component.text(startupMessage));
+        this.logger = server.getLogger();
     }
 
     // 订阅初始化事件
