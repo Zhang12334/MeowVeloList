@@ -10,7 +10,6 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import net.kyori.adventure.text.Component;
-import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import javax.inject.Inject;
@@ -23,11 +22,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Plugin(
-        id = "meowvelolist",
-        name = "MeowVeloList",
-        version = "1.0",
-        description = "一个在 Velocity 端显示玩家列表的插件",
-        authors = {"Zhang1233"}
+        id = "meowvelolist", // 插件ID
+        name = "MeowVeloList", // 插件名称
+        version = "1.0", // 插件版本
+        description = "一个在 Velocity 端显示玩家列表的插件", // 插件描述
+        authors = {"Zhang1233"} // 插件作者
 )
 public class MeowVeloList {
 
@@ -49,21 +48,23 @@ public class MeowVeloList {
     private String serverPrefix;
     private String playersPrefix;
 
+    // 构造函数，注入 ProxyServer 和数据目录路径
     @Inject
     public MeowVeloList(ProxyServer server, @DataDirectory Path dataDirectory) {
         this.server = server;
         loadLanguage(); // 载入语言
     }
 
+    // 代理初始化时注册命令
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
-        // Register the command /meowlist
+        // 注册 /meowlist 命令
         server.getCommandManager().register("meowlist", new PlayerInfoCommand(server));
         // 检查更新
         checkUpdate();
     }
 
-    // Load language settings based on config
+    // 加载语言设置
     private void loadLanguage() {
         String language = getLanguageFromConfig(); // 从配置文件获取语言代码
 
@@ -168,7 +169,7 @@ public class MeowVeloList {
         playersPrefix = "§bPlayers: ";
     }
 
-    // Command to display the information
+    // 显示玩家信息的命令
     private static class PlayerInfoCommand implements SimpleCommand {
         private final ProxyServer server;
 
@@ -180,11 +181,11 @@ public class MeowVeloList {
         public void execute(Invocation invocation) {
             CommandSource source = invocation.source();
             
-            // Get the total number of online players
+            // 获取在线玩家总数
             int totalPlayers = server.getAllPlayers().size();
             StringBuilder response = new StringBuilder(MeowVeloList.getInstance().nowusingversionMessage + ": " + totalPlayers + "\n");
 
-            // Get online players per server
+            // 获取每个服务器的在线玩家
             for (RegisteredServer registeredServer : server.getAllServers()) {
                 String serverName = registeredServer.getServerInfo().getName();
                 List<String> playerNames = registeredServer.getPlayersConnected().stream()
@@ -197,18 +198,18 @@ public class MeowVeloList {
                         .append(String.join(", ", playerNames)).append("\n");
             }
 
-            // Send the information to the player/console who issued the command
+            // 向玩家或控制台发送信息
             source.sendMessage(Component.text(response.toString()));
         }
 
         @Override
         public List<String> suggest(Invocation invocation) {
-            return List.of(); // No suggestions for this command
+            return List.of(); // 该命令没有建议
         }
 
         @Override
         public boolean hasPermission(Invocation invocation) {
-            return true; // All players and console can use this command
+            return true; // 所有玩家和控制台都有权限使用此命令
         }
     }
 
@@ -226,61 +227,52 @@ public class MeowVeloList {
         try {
             String latestVersion = null;
             for (String url : githubUrls) {
+                // 拼接最终的请求URL
                 HttpURLConnection connection = (HttpURLConnection) new URL(url + latestVersionUrl).openConnection();
-                connection.setInstanceFollowRedirects(false); // 不自动跟随重定向
+                connection.setInstanceFollowRedirects(false); // 禁止自动重定向
+
+                // 发送请求并获取响应代码
                 int responseCode = connection.getResponseCode();
-                if (responseCode == 302) { // 如果 302 了
+
+                // 如果响应是 302，则获取重定向地址
+                if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
                     String redirectUrl = connection.getHeaderField("Location");
-                    if (redirectUrl != null && redirectUrl.contains("tag/")) {
-                        latestVersion = extractVersionFromUrl(redirectUrl);
+
+                    // 这里可以解析新版本的下载链接
+                    // 例如重定向 URL 是 https://github.com/Zhang12334/MeowVeloList/releases/tag/1.1
+                    if (redirectUrl != null && redirectUrl.contains("github.com")) {
+                        latestVersion = extractVersionFromRedirectUrl(redirectUrl);
                         break;
                     }
                 }
-                connection.disconnect();
-                if (latestVersion != null) {
-                    break;
+            }
+
+            if (latestVersion == null) {
+                source.sendMessage(Component.text(checkfailedMessage));  // 如果无法获取最新版本
+            } else {
+                // 比较当前版本和最新版本
+                if (!currentVersion.equals(latestVersion)) {
+                    source.sendMessage(Component.text(updateavailableMessage + latestVersion));
+                    source.sendMessage(Component.text(updateurlMessage + latestVersionUrl));  // 这里可以替换成具体的下载链接
+                } else {
+                    source.sendMessage(Component.text(nowusinglatestversionMessage));
                 }
             }
-            if (latestVersion == null) {
-                getLogger().warning(checkfailedMessage);
-                return;
-            }
-            if (isVersionGreater(latestVersion, currentVersion)) {
-                getLogger().warning(updateavailableMessage + " v" + latestVersion);
-                getLogger().warning(updateurlMessage + " https://github.com/Zhang12334/MeowVeloList/releases/latest");
-                getLogger().warning(oldversionmaycauseproblemMessage);
-            } else {
-                getLogger().info(nowusinglatestversionMessage);
-            }
-        } catch (Exception e) {
-            getLogger().warning(checkfailedMessage);
+        } catch (IOException e) {
+            e.printStackTrace();
+            source.sendMessage(Component.text(checkfailedMessage));
         }
     }
 
-    private boolean isVersionGreater(String version1, String version2) {
-        String[] v1Parts = version1.split("\\.");
-        String[] v2Parts = version2.split("\\.");
-        for (int i = 0; i < Math.max(v1Parts.length, v2Parts.length); i++) {
-            int v1Part = i < v1Parts.length ? Integer.parseInt(v1Parts[i]) : 0;
-            int v2Part = i < v2Parts.length ? Integer.parseInt(v2Parts[i]) : 0;
-            if (v1Part > v2Part) {
-                return true;
-            } else if (v1Part < v2Part) {
-                return false;
-            }
-        }
-        return false;
-    }
-
-    private String extractVersionFromUrl(String url) {
-        int tagIndex = url.indexOf("tag/");
-        if (tagIndex != -1) {
-            int endIndex = url.indexOf('/', tagIndex + 4);
-            if (endIndex == -1) {
-                endIndex = url.length();
-            }
-            return url.substring(tagIndex + 4, endIndex);
+    // 解析重定向后的URL，提取版本信息
+    private String extractVersionFromRedirectUrl(String redirectUrl) {
+        // 解析GitHub的URL，假设格式是 https://github.com/username/project/releases/tag/1.1
+        String versionPrefix = "tag/";
+        int versionIndex = redirectUrl.lastIndexOf(versionPrefix);
+        if (versionIndex != -1) {
+            return redirectUrl.substring(versionIndex + versionPrefix.length());
         }
         return null;
     }
+
 }
