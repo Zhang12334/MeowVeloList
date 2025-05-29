@@ -24,13 +24,13 @@ jobs:
 
       - name: "重命名"
         run: |
-          mv target/MeowVelolist-beta.jar MeowVelolist-${{ github.ref_name }}.jar
+          mv target/MeowVeloList-beta.jar MeowVeloList-${{ github.ref_name }}.jar
       
       - name: "上传"
         uses: actions/upload-artifact@v4
         with:
-          name: MeowVelolist-Release
-          path: MeowVelolist-${{ github.ref_name }}.jar
+          name: MeowVeloList-Release
+          path: MeowVeloList-${{ github.ref_name }}.jar
 
   upload-to-release:
     name: "打包 - 上传至 Release"
@@ -54,4 +54,4 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            MeowVelolist-Release/MeowVelolist-${{ github.ref_name }}.jar
+            MeowVeloList-Release/MeowVeloList-${{ github.ref_name }}.jar
