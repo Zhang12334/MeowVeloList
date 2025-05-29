@@ -3,6 +3,9 @@
     "name": "MeowVeloList",
     "version": "1.1.0",
     "description": "A better player list display plugin for Velocity",
+    "authors": [
+      "Zhang1233"
+    ],
     "main": "com.meow.meowvelolist.MeowVeloList"
   }
   
