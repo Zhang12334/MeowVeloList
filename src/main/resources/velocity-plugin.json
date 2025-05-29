@@ -1,7 +1,7 @@
 {
     "id": "meowvelolist",
     "name": "MeowVeloList",
-    "version": "1.0",
+    "version": "1.1.0",
     "description": "A plugin that displays the player list on the Velocity proxy.",
     "authors": [
       "Zhang1233"
