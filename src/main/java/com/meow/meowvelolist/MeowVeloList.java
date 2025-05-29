@@ -1,8 +1,8 @@
 package com.meow.meowvelolist;
 
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
-import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.Player;
@@ -10,27 +10,24 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.yaml.snakeyaml.Yaml;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.TextComponent;
-import java.util.Arrays;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
-import com.meow.meowvelolist.Metrics;
-@Plugin(
-        id = "meowvelolist", 
-        name = "MeowVeloList", 
-        version = "1.0", 
-        description = "一个在 Velocity 端显示玩家列表的插件", 
-        authors = {"Zhang1233"} 
-)
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import org.json.JSONObject;
+import java.util.Arrays;
+import java.util.Collections;
+
 public class MeowVeloList {
     private String startupMessage;
     private String nowusingversionMessage;
@@ -47,15 +44,29 @@ public class MeowVeloList {
     private String serverPrefix;
     private String playersPrefix;
     private String reloadsuccessMessage;
-    private static final String VERSION = "1.0";
+    private String unknownCommandMessage;
+    private String playerNotFoundMessage;
+    private String playerInfoTitle;
+    private String playerInfoUuid;
+    private String playerInfoCurrentServer;
+    private String playerInfoConnectionAddress;
+    private String playerInfoConnectionPort;
+    private String playerInfoGameVersion;
+    private String playerInfoPing;
+    private String checkPlayerNameRequired;
     private final ProxyServer server;
     private Path dataDirectory;
     private final Metrics.Factory metricsFactory;
+    private static final String VERSION_URL = "https://api.github.com/repos/Zhang12334/MeowVeloList/releases/latest";
+    private static final String DOWNLOAD_URL = "https://github.com/Zhang12334/MeowVeloList/releases/latest";
+    private static final String separator = "§a≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡";
+    private final PluginContainer pluginContainer;
 
     @Inject
-    public MeowVeloList(ProxyServer server, @DataDirectory Path dataDirectory, Metrics.Factory metricsFactory) {
+    public MeowVeloList(ProxyServer server, @DataDirectory Path dataDirectory, Metrics.Factory metricsFactory, PluginContainer pluginContainer) {
         this.server = server;
         this.dataDirectory = dataDirectory;
+        this.pluginContainer = pluginContainer;
         loadLanguage(); 
         server.getConsoleCommandSource().sendMessage(Component.text(startupMessage));
         this.metricsFactory = metricsFactory;
@@ -64,7 +75,7 @@ public class MeowVeloList {
     // 订阅初始化事件
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
-        int pluginId = 23904; // <-- Replace with the id of your plugin!
+        int pluginId = 23904;
         Metrics metrics = metricsFactory.make(this, pluginId);
         server.getCommandManager().register("mlist", new SimpleCommand() {
             @Override
@@ -72,136 +83,236 @@ public class MeowVeloList {
                 CommandSource source = invocation.source();
                 String[] args = invocation.arguments();
 
-                if (!source.hasPermission("meowvelolist.mlist")) {
+                if (!source.hasPermission("meowvelolist.mlist.use")) {
                     source.sendMessage(Component.text(nopermissionMessage));
                     return;
                 }
 
-                int totalPlayers = server.getAllPlayers().size();
-                TextComponent.Builder response = Component.text();
-
-                // 使用全新的分隔符
-                String separator = "§a≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡";
-
-                response.append(Component.text(separator).decorate(TextDecoration.BOLD)).append(Component.newline());
-                response.append(Component.text(nowallplayercountMessage + totalPlayers)).append(Component.newline());
-                response.append(Component.text(separator)).append(Component.newline()); // 这行已替换为新的分隔符
-
-                boolean firstServer = true; // 用于控制是否是第一个服务器
-
-                for (RegisteredServer registeredServer : server.getAllServers()) {
-                    String serverName = registeredServer.getServerInfo().getName();
-                    List<String> playerNames = registeredServer.getPlayersConnected().stream()
-                            .map(Player::getUsername)
-                            .collect(Collectors.toList());
-
-                    // 如果不是第一个服务器，添加分隔符
-                    if (!firstServer) {
-                        response.append(Component.text(separator)).append(Component.newline()); // 每个服务器之间添加分隔符
-                    }
-
-                    // 添加当前服务器信息
-                    response.append(Component.text(serverPrefix + serverName + " §7(" + playerNames.size() + singleserverplayeronlineMessage + "§7)").append(Component.newline()));
-
-                    // 玩家信息
-                    if (!playerNames.isEmpty()) {
-                        response.append(Component.text(playersPrefix + String.join(", ", playerNames)).append(Component.newline()));
-                    } else {
-                        response.append(Component.text(noplayersonlineMessage)).append(Component.newline());
-                    }
-
-                    firstServer = false; // 第一个服务器输出后，设置为false，后续服务器添加分隔符
+                // 如果没有参数，显示玩家列表
+                if (args.length == 0) {
+                    showPlayerList(source);
+                    return;
                 }
 
-                response.append(Component.text(separator)).append(Component.newline()); // 输出最后一个服务器信息后再加上分隔符
+                // 处理子命令
+                switch (args[0].toLowerCase()) {
+                    case "reload":
+                        if (!source.hasPermission("meowvelolist.mlist.reload")) {
+                            source.sendMessage(Component.text(nopermissionMessage));
+                            return;
+                        }
+                        loadLanguage();
+                        source.sendMessage(Component.text(reloadsuccessMessage));
+                        break;
 
-                source.sendMessage(response.build());  // 发送构建的文本组件
+                    case "check":
+                        if (!source.hasPermission("meowvelolist.mlist.check")) {
+                            source.sendMessage(Component.text(nopermissionMessage));
+                            return;
+                        }
+                        if (args.length < 2) {
+                            source.sendMessage(Component.text(checkPlayerNameRequired));
+                            return;
+                        }
+                        checkPlayerInfo(source, args[1]);
+                        break;
+
+                    default:
+                        source.sendMessage(Component.text(unknownCommandMessage));
+                        break;
+                }
             }
-        });
-        server.getCommandManager().register("mlist_reload", new SimpleCommand() {
+
             @Override
-            public void execute(Invocation invocation) {
-                CommandSource source = invocation.source();
-                if (!source.hasPermission("meowvelolist.reload")) {
-                    source.sendMessage(Component.text(nopermissionMessage));
-                    return;
+            public List<String> suggest(Invocation invocation) {
+                String[] args = invocation.arguments();
+                String partialArg = args.length > 0 ? args[args.length - 1].toLowerCase() : "";
+                
+                // 如果没有参数，返回子命令列表
+                if (args.length == 0) {
+                    return Arrays.asList("reload", "check");
                 }
-                loadLanguage();  // 重载语言文件
-                source.sendMessage(Component.text(reloadsuccessMessage));
+                
+                // 如果第一个参数是 check，返回在线玩家列表
+                if (args.length == 1 && "check".startsWith(partialArg)) {
+                    return Collections.singletonList("check");
+                }
+                
+                // 如果第一个参数是 check，第二个参数补全在线玩家
+                if (args.length == 2 && args[0].equalsIgnoreCase("check")) {
+                    return server.getAllPlayers().stream()
+                            .map(Player::getUsername)
+                            .filter(name -> name.toLowerCase().startsWith(partialArg))
+                            .collect(Collectors.toList());
+                }
+                
+                return Collections.emptyList();
             }
         });
+
         // 异步执行更新检查
         CompletableFuture.runAsync(() -> checkUpdate());
     }
 
-    private void checkUpdate() {
-        String currentVersion = VERSION;
-        server.getConsoleCommandSource().sendMessage(Component.text(nowusingversionMessage + currentVersion));
-        server.getConsoleCommandSource().sendMessage(Component.text(checkingupdateMessage));
-        String latestVersionUrl = "https://github.com/Zhang12334/MeowVeloList/releases/latest";
+    /**
+     * 显示玩家列表
+     */
+    private void showPlayerList(CommandSource source) {
+        int totalPlayers = server.getAllPlayers().size();
+        TextComponent.Builder response = Component.text();
 
-        // 可用的前缀列表
-        List<String> prefixList = Arrays.asList(
-                "https://ghp.ci/",   
-                ""
-        );
+        response.append(Component.text(separator)).append(Component.newline());
+        response.append(Component.text(nowallplayercountMessage + totalPlayers)).append(Component.newline());
+        response.append(Component.text(separator)).append(Component.newline());
 
-        String latestVersion = null;
+        boolean firstServer = true;
 
-        // 逐一尝试不同前缀
-        for (String prefix : prefixList) {
-            try {
-                String urlToCheck = prefix + latestVersionUrl;
+        for (RegisteredServer registeredServer : server.getAllServers()) {
+            String serverName = registeredServer.getServerInfo().getName();
+            List<String> playerNames = registeredServer.getPlayersConnected().stream()
+                    .map(Player::getUsername)
+                    .sorted((s1, s2) -> {
+                        int lowerCompare = s1.toLowerCase().compareTo(s2.toLowerCase());
+                        if (lowerCompare != 0) {
+                            return lowerCompare;
+                        }
+                        return s1.compareTo(s2);
+                    })
+                    .collect(Collectors.toList());
 
-                // 发送请求
-                HttpURLConnection connection = (HttpURLConnection) new URL(urlToCheck).openConnection();
-                connection.setInstanceFollowRedirects(false); // 防止自动跳转
-
-                int responseCode = connection.getResponseCode();
-                if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
-                    String redirectUrl = connection.getHeaderField("Location");
-                    if (redirectUrl != null && redirectUrl.contains("github.com")) {
-                        latestVersion = extractVersionFromRedirectUrl(redirectUrl);
-                        break;  // 成功获取版本后退出循环
-                    }
-                }
-            } catch (IOException e) {
-                // 连接失败，尝试下一个前缀
-                continue;
+            if (!firstServer) {
+                response.append(Component.text(separator)).append(Component.newline());
             }
+
+            response.append(Component.text(serverPrefix + serverName + " §7(" + playerNames.size() + singleserverplayeronlineMessage + "§7)").append(Component.newline()));
+
+            if (!playerNames.isEmpty()) {
+                response.append(Component.text(playersPrefix + String.join(", ", playerNames)).append(Component.newline()));
+            } else {
+                response.append(Component.text(noplayersonlineMessage)).append(Component.newline());
+            }
+
+            firstServer = false;
         }
 
-        if (latestVersion == null) {
-            server.getConsoleCommandSource().sendMessage(Component.text(checkfailedMessage));  
-        } else {
-            if (!currentVersion.equals(latestVersion)) {
+        response.append(Component.text(separator)).append(Component.newline());
+        source.sendMessage(response.build());
+    }
+
+    /**
+     * 检查玩家信息
+     */
+    private void checkPlayerInfo(CommandSource source, String playerName) {
+        Player targetPlayer = server.getPlayer(playerName).orElse(null);
+        if (targetPlayer == null) {
+            source.sendMessage(Component.text(playerNotFoundMessage + playerName));
+            return;
+        }
+
+        TextComponent.Builder response = Component.text();
+
+        response.append(Component.text(separator)).append(Component.newline());
+        response.append(Component.text(playerInfoTitle + targetPlayer.getUsername())).append(Component.newline());
+        // 基本信息
+        response.append(Component.text(playerInfoUuid + targetPlayer.getUniqueId())).append(Component.newline());
+        response.append(Component.text(playerInfoCurrentServer + targetPlayer.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse("未知"))).append(Component.newline());
+        response.append(Component.text(playerInfoConnectionAddress + targetPlayer.getRemoteAddress().getAddress().getHostAddress())).append(Component.newline());
+        response.append(Component.text(playerInfoConnectionPort + targetPlayer.getRemoteAddress().getPort())).append(Component.newline());
+        response.append(Component.text(playerInfoGameVersion + targetPlayer.getProtocolVersion().getProtocol())).append(Component.newline());
+        response.append(Component.text(playerInfoPing + targetPlayer.getPing() + "ms")).append(Component.newline());
+        response.append(Component.text(separator)).append(Component.newline());
+        source.sendMessage(response.build());
+    }
+
+    /**
+     * 检查更新
+     */
+    public void checkUpdate() {
+        String currentVersion = pluginContainer.getDescription().getVersion().orElse("unknown");
+        server.getConsoleCommandSource().sendMessage(Component.text(nowusingversionMessage + currentVersion));
+        server.getConsoleCommandSource().sendMessage(Component.text(checkingupdateMessage));
+
+        try {
+            // 使用 GitHub API 获取最新版本信息
+            String response = fetchVersionInfo();
+            JSONObject json = new JSONObject(response);
+            String latestVersion = json.getString("tag_name"); // 获取最新版本号
+
+            // 比较版本号
+            if (isVersionGreater(latestVersion, currentVersion)) {
                 server.getConsoleCommandSource().sendMessage(Component.text(updateavailableMessage + latestVersion));
-                server.getConsoleCommandSource().sendMessage(Component.text(updateurlMessage + latestVersionUrl));  
+                server.getConsoleCommandSource().sendMessage(Component.text(updateurlMessage + DOWNLOAD_URL));
                 server.getConsoleCommandSource().sendMessage(Component.text(oldversionmaycauseproblemMessage));
             } else {
                 server.getConsoleCommandSource().sendMessage(Component.text(nowusinglatestversionMessage));
             }
+        } catch (Exception e) {
+            server.getConsoleCommandSource().sendMessage(Component.text(checkfailedMessage));
         }
     }
 
-    private String extractVersionFromRedirectUrl(String redirectUrl) {
-        String versionPrefix = "tag/";
-        int versionIndex = redirectUrl.lastIndexOf(versionPrefix);
-        if (versionIndex != -1) {
-            return redirectUrl.substring(versionIndex + versionPrefix.length());
+    /**
+     * 获取版本信息
+     * @return JSON 响应
+     * @throws Exception 如果网络请求失败
+     */
+    private String fetchVersionInfo() throws Exception {
+        URL url = new URI(VERSION_URL).toURL();
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+        connection.setConnectTimeout(5000);
+        connection.setReadTimeout(5000);
+
+        int responseCode = connection.getResponseCode();
+        if (responseCode != 200) {
+            throw new Exception("HTTP 响应码: " + responseCode);
         }
-        return null;
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        StringBuilder response = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            response.append(line);
+        }
+        reader.close();
+        connection.disconnect();
+
+        return response.toString();
+    }
+
+    /**
+     * 比较版本号（支持 1.1.1 格式）
+     * @param latestVersion 最新版本号
+     * @param currentVersion 当前版本号
+     * @return 如果 latestVersion > currentVersion，返回 true
+     */
+    private boolean isVersionGreater(String latestVersion, String currentVersion) {
+        // 移除可能的 "v" 前缀
+        latestVersion = latestVersion.replaceFirst("^v", "");
+        currentVersion = currentVersion.replaceFirst("^v", "");
+
+        String[] v1Parts = latestVersion.split("\\.");
+        String[] v2Parts = currentVersion.split("\\.");
+
+        for (int i = 0; i < Math.max(v1Parts.length, v2Parts.length); i++) {
+            int v1Part = i < v1Parts.length ? Integer.parseInt(v1Parts[i]) : 0;
+            int v2Part = i < v2Parts.length ? Integer.parseInt(v2Parts[i]) : 0;
+            if (v1Part > v2Part) return true;
+            if (v1Part < v2Part) return false;
+        }
+        return false;
     }
 
     // 加载语言设置
     private void loadLanguage() {
         String language = getLanguageFromConfig(); 
 
-        if ("zh_cn".equalsIgnoreCase(language)) {
+        if ("zh_hans".equalsIgnoreCase(language)) {
             loadChineseSimplifiedMessages();
-        } else if ("zh_tc".equalsIgnoreCase(language)) {
+        } else if ("zh_hant".equalsIgnoreCase(language)) {
             loadChineseTraditionalMessages();
-        } else if ("en".equalsIgnoreCase(language)) {
+        } else if ("en_us".equalsIgnoreCase(language)) {
             loadEnglishMessages();
         } else {
             loadChineseSimplifiedMessages();
@@ -223,7 +334,7 @@ public class MeowVeloList {
         try {
             Yaml yaml = new Yaml();
             java.util.Map<String, Object> config = yaml.load(java.nio.file.Files.newInputStream(configFile.toPath()));
-            return (String) config.getOrDefault("language", "zh_cn");
+            return (String) config.getOrDefault("language", "zh_hans");
         } catch (Exception e) {
             e.printStackTrace();
             return "zh_cn";
@@ -236,7 +347,7 @@ public class MeowVeloList {
                 configFile.createNewFile();
                 Yaml yaml = new Yaml();
                 java.util.Map<String, Object> config = new java.util.HashMap<>();
-                config.put("language", "zh_cn");
+                config.put("language", "zh_hans");
 
                 yaml.dump(config, java.nio.file.Files.newBufferedWriter(configFile.toPath()));
             }
@@ -262,6 +373,16 @@ public class MeowVeloList {
         serverPrefix = "§e子服 ";
         playersPrefix = "§7玩家列表: ";
         reloadsuccessMessage = "§a重载配置文件成功!";
+        unknownCommandMessage = "§c未知的子命令！可用命令：/mlist [reload|check <玩家名>]";
+        playerNotFoundMessage = "§c找不到玩家 ";
+        playerInfoTitle = "§e玩家信息 - ";
+        playerInfoUuid = "§6UUID: §f";
+        playerInfoCurrentServer = "§6当前服务器: §f";
+        playerInfoConnectionAddress = "§6客户端IP: §f";
+        playerInfoConnectionPort = "§6客户端端口: §f";
+        playerInfoGameVersion = "§6协议版本: §f";
+        playerInfoPing = "§6Ping: §f";
+        checkPlayerNameRequired = "§c请指定要查询的玩家名称！";
     }
 
     // 加载繁体中文消息
@@ -281,6 +402,16 @@ public class MeowVeloList {
         serverPrefix = "§e子伺服 ";
         playersPrefix = "§7玩家列表: ";
         reloadsuccessMessage = "§a重載配置文件成功!";
+        unknownCommandMessage = "§c未知的子命令！可用命令：/mlist [reload|check <玩家名>]";
+        playerNotFoundMessage = "§c找不到玩家 ";
+        playerInfoTitle = "§e玩家信息 - ";
+        playerInfoUuid = "§6UUID: §f";
+        playerInfoCurrentServer = "§6當前伺服器: §f";
+        playerInfoConnectionAddress = "§6客戶端IP: §f";
+        playerInfoConnectionPort = "§6客戶端端口: §f";
+        playerInfoGameVersion = "§6協議版本: §f";
+        playerInfoPing = "§6Ping: §f";
+        checkPlayerNameRequired = "§c請指定要查詢的玩家名稱！";
     }
 
     // 加载英文消息
@@ -300,5 +431,15 @@ public class MeowVeloList {
         serverPrefix = "§eServer ";
         playersPrefix = "§7Player list: ";
         reloadsuccessMessage = "§aReloaded config file successfully!";
+        unknownCommandMessage = "§cUnknown subcommand! Available commands: /mlist [reload|check <player>]";
+        playerNotFoundMessage = "§cPlayer not found: ";
+        playerInfoTitle = "§ePlayer Info - ";
+        playerInfoUuid = "§6UUID: §f";
+        playerInfoCurrentServer = "§6Current Server: §f";
+        playerInfoConnectionAddress = "§6Client IP: §f";
+        playerInfoConnectionPort = "§6Client Port: §f";
+        playerInfoGameVersion = "§6Protocol Version: §f";
+        playerInfoPing = "§6Ping: §f";
+        checkPlayerNameRequired = "§cPlease specify a player name!";
     }
 }
